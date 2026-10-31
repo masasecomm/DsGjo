@@ -139,7 +139,7 @@ as $$
   where analytics.search_date >= (now() at time zone 'Africa/Johannesburg')::date - 29
   group by analytics.search_term
   having sum(analytics.search_count) >= 1
-  order by search_count desc, analytics.search_term asc
+  order by 2 desc, 1 asc
   limit least(greatest(coalesce(p_limit, 5), 1), 8);
 $$;
 
@@ -160,7 +160,7 @@ begin
   where analytics.search_date >= (now() at time zone 'Africa/Johannesburg')::date - 29
   group by analytics.search_term
   having sum(analytics.search_count) >= 1
-  order by search_count desc, analytics.search_term asc
+  order by 2 desc, 1 asc
   limit least(greatest(coalesce(p_limit, 5), 1), 10);
 end;
 $$;
@@ -181,7 +181,7 @@ begin
   from public.job_page_view_analytics as analytics
   where analytics.view_date >= (now() at time zone 'Africa/Johannesburg')::date - 29
   group by analytics.page_path, analytics.page_title
-  order by view_count desc, analytics.page_title asc
+  order by 3 desc, 2 asc
   limit least(greatest(coalesce(p_limit, 10), 1), 20);
 end;
 $$;
