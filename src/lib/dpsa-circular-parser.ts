@@ -16,6 +16,8 @@ export type ParsedVacancyDetails = {
   requiredDocuments: string[];
   enquiries: string;
   telephone: string;
+  centre: string;
+  region: string;
   note: string;
   closingTime: string;
   contractDuration: string;
@@ -73,6 +75,7 @@ type FieldName =
   | "level"
   | "natureOfAppointment"
   | "centre"
+  | "region"
   | "closingDate"
   | "requirements"
   | "duties"
@@ -89,7 +92,7 @@ type CircularDetails = { name: string; date: string; link: string };
 
 const postPattern = /\bPOST\s+(\d{1,3}\s*\/\s*\d{1,3}|\d{1,3})\s*:\s*/gi;
 const fieldPatterns: Array<[FieldName, RegExp]> = [
-  ["refNo", /\bREF\s*NO\s*[:.\u2013\u2014-]/i],
+  ["refNo", /\bREF(?:ERENCE)?(?:\s*(?:NO\.?|NUMBER))?\s*[:.\u2013\u2014-]/i],
   ["branch", /\b(?:Branch|Division)\s*[:.\u2013\u2014-]/i],
   ["chiefDirectorate", /(?:Chief\s*Directorate|\bCd)\s*[:.\u2013\u2014-]/i],
   ["directorate", /(?<!Chief\s)\b(?:Directorate|Dir)\s*[:.\u2013\u2014-]/i],
@@ -98,7 +101,8 @@ const fieldPatterns: Array<[FieldName, RegExp]> = [
   ["stipend", /\bSTIPEND(?:\s*[:.\u2013\u2014-]|\s+(?=R\s*\d))/i],
   ["level", /\bLEVEL\s*[:.\u2013\u2014-]/i],
   ["natureOfAppointment", /Nature\s*of\s*Appointment\s*[:.\u2013\u2014-]/i],
-  ["centre", /\bCENTRE\s*[:.\u2013\u2014-]/i],
+  ["centre", /\bCENT(?:RE|ER)S?\s*[:.\u2013\u2014-]/i],
+  ["region", /\bREGION\s*[:.\u2013\u2014-]/i],
   ["closingDate", /CLOSING\s*DATE\s*[:.\u2013\u2014-]/i],
   ["requirements", /\bREQUIREMENTS\s*[:.\u2013\u2014-]/i],
   ["duties", /\bDUTIES\s*[:.\u2013\u2014-]/i],
@@ -222,6 +226,7 @@ function findDepartmentAndProvince(prefix: string): PageContext {
       department = "";
       continue;
     }
+    if (/\bNATIONAL\s+HEAD\s+OFFICE\b/i.test(line)) province = "Gauteng";
 
     const provinceHeader = line.match(/^PROVINCIAL\s+ADMINISTRATION\s*:\s*(.+)$/i);
     if (provinceHeader) {
@@ -267,6 +272,10 @@ function findCircularPageContexts(text: string) {
       department = "";
       contexts.set(page, { province, department });
       continue;
+    }
+    if (/\bNATIONAL\s+HEAD\s+OFFICE\b/i.test(line)) {
+      province = "Gauteng";
+      contexts.set(page, { province, department });
     }
     if (/^(?:(?:OTHER|ADDITIONAL)\s+POST\s+)?POST\s+\d{1,3}(?:\s*\/\s*\d{1,3})?\s*:/i.test(line)) sawPost = true;
 
@@ -326,6 +335,7 @@ function departmentForPage(ranges: DepartmentRange[], page: number) {
 }
 
 function provinceFromVacancy(value: string) {
+  if (/\bNATIONAL\s+HEAD\s+OFFICE\b/i.test(value)) return "Gauteng";
   const found = provinceNames.filter((province) =>
     new RegExp(`\\b${province.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(value),
   );
@@ -410,7 +420,7 @@ function extractTelephone(value: string) {
 function normalizeEmploymentType(value: string, evidence: string): EmploymentType | null {
   const searchable = `${value} ${evidence}`;
   if (/\binternship\b/i.test(searchable)) return "Internship";
-  if (/\bsessional\b/i.test(searchable)) return "Sessional";
+  if (/\bsession(?:al)?\b/i.test(searchable)) return "Sessional";
   if (/\btemporary\b/i.test(searchable)) return "Temporary";
   if (/\bpart[\s-]?time\b/i.test(searchable)) return "Part-time";
   if (/\bfull[\s-]?time\b/i.test(searchable)) return "Full-time";
@@ -418,7 +428,7 @@ function normalizeEmploymentType(value: string, evidence: string): EmploymentTyp
   if (/\b(?:fixed[\s-]*term\s+)?contract\b|\bcontract\s+of\s+\d+\s*(?:months?|years?)\b/i.test(searchable)) {
     return "Contract";
   }
-  return null;
+  return "Permanent";
 }
 
 function extractContractDuration(value: string) {
@@ -456,6 +466,7 @@ function extractVacancyDetails(input: {
   stipend: string;
   natureOfAppointment: string;
   centre: string;
+  region: string;
   numberOfPosts: string;
   title: string;
   positionText: string;
@@ -504,6 +515,8 @@ function extractVacancyDetails(input: {
     requiredDocuments: documentMatches,
     enquiries: input.enquiries,
     telephone: input.telephone,
+    centre: input.centre,
+    region: input.region,
     note: input.note,
     closingTime: extractClosingTime(input.closingDate),
     contractDuration,
@@ -550,7 +563,7 @@ function buildDescription(
   extractedDetails: ParsedVacancyDetails,
 ) {
   const employment = vacancy.employment_type ? `a ${vacancy.employment_type.toLowerCase()} opportunity` : "an opportunity";
-  const location = vacancy.province || vacancy.location || "a location not stated in the circular";
+  const location = vacancy.location || vacancy.province || "a location not stated in the circular";
   const lines = [
     `${circular.name || "DPSA vacancy circular"}: ${vacancy.department || "This department"} is looking for ${vacancy.title}, ${employment} based in ${location}.`,
   ];
@@ -567,11 +580,13 @@ function buildDescription(
     ["Province", vacancy.province],
     ["Closing date", vacancy.closing_date],
   ];
-  for (const [label, value] of quickView) if (value) lines.push(`${label}: ${value}`);
+  for (const [label, value] of quickView) if (value) lines.push(`• ${label}: ${value}`);
 
   lines.push("", "MORE VACANCY DETAILS");
   const details: Array<[string, string]> = [
-    ["Where is this job based?", fields.centre ?? ""],
+    ["Centres", fields.centre ?? ""],
+    ["Region", fields.region ?? ""],
+    ["Location", vacancy.location],
     ["Job level", vacancy.level ? `Level ${vacancy.level}` : ""],
     ["Salary", [vacancy.salary, vacancy.stipend].filter(Boolean).join(" ")],
     ["Grade level", vacancy.grade],
@@ -579,7 +594,7 @@ function buildDescription(
     ["Chief directorate", fields.chiefDirectorate ?? ""],
     ["Directorate", vacancy.directorate],
   ];
-  for (const [label, value] of details) if (value) lines.push(`${label}: ${value}`);
+  for (const [label, value] of details) if (value) lines.push(`• ${label}: ${value}`);
 
   if (vacancy.job_purpose) lines.push("", "JOB PURPOSE", vacancy.job_purpose);
   const requirements = toList(vacancy.requirements);
@@ -590,7 +605,8 @@ function buildDescription(
   }
   const skills = toList(fields.skillsAndCompetencies ?? "");
   if (skills.length) lines.push("", "SKILLS AND COMPETENCIES", ...skills.map((item) => `• ${item}`));
-  if (extractedDetails.experience) lines.push("", "EXPERIENCE", extractedDetails.experience);
+  const experience = toList(extractedDetails.experience);
+  if (experience.length) lines.push("", "EXPERIENCE", ...experience.map((item) => `• ${item}`));
   if (extractedDetails.professionalRegistration) {
     lines.push("", "PROFESSIONAL REGISTRATION", extractedDetails.professionalRegistration);
   }
@@ -605,19 +621,19 @@ function buildDescription(
   ].filter(([, value]) => value);
   if (applicationDetails.length) {
     lines.push("", "HOW TO APPLY");
-    for (const [label, value] of applicationDetails) lines.push(`${label}: ${value}`);
+    for (const [label, value] of applicationDetails) lines.push(`• ${label}: ${value}`);
   }
   if (extractedDetails.applicationMethods.length) {
-    lines.push(`Application method: ${extractedDetails.applicationMethods.join(", ")}`);
+    lines.push(`• Application method: ${extractedDetails.applicationMethods.join(", ")}`);
   }
   if (extractedDetails.applicationEmails.length) {
-    lines.push(`Application email: ${extractedDetails.applicationEmails.join(", ")}`);
+    lines.push(`• Application email: ${extractedDetails.applicationEmails.join(", ")}`);
   }
   if (extractedDetails.requiredDocuments.length) {
-    lines.push(`Required documents: ${extractedDetails.requiredDocuments.join(", ")}`);
+    lines.push(`• Required documents: ${extractedDetails.requiredDocuments.join(", ")}`);
   }
   if (extractedDetails.closingTime) {
-    lines.push(`Application deadline time: ${extractedDetails.closingTime}`);
+    lines.push(`• Application deadline time: ${extractedDetails.closingTime}`);
   }
   const notes = toList(vacancy.note);
   if (notes.length) lines.push("", "NOTE", ...notes.map((item) => `• ${item}`));
@@ -659,19 +675,23 @@ export function parseDpsaCircularText(text: string, metadata: DpsaCircularMetada
       const field = matches[fieldIndex];
       const fieldEnd = matches[fieldIndex + 1]?.start ?? content.length;
       if (fields[field.name] === undefined) {
-        fields[field.name] = trimCircularTail(content.slice(field.end, fieldEnd).replace(/\s+/g, " ").trim());
+        fields[field.name] = trimCircularTail(
+          content.slice(field.end, fieldEnd).replace(/\s+/g, " ").trim().replace(/\s*\[$/, ""),
+        );
       }
     }
     stripEmbeddedNotes(fields);
 
     const page = getPage(post.index);
     const prefixIndex = text.indexOf(post[0]);
-    const pageContext = pageContexts.get(page)
-      ?? findDepartmentAndProvince(prefixIndex >= 0 ? text.slice(0, prefixIndex) : "");
+    const knownPageContext = pageContexts.get(page);
+    const pageContext = knownPageContext && (knownPageContext.department || knownPageContext.province)
+      ? knownPageContext
+      : findDepartmentAndProvince(prefixIndex >= 0 ? text.slice(0, prefixIndex) : "");
     const provincialDepartment = departmentForPage(departmentRanges.provincial, page);
     const nationalDepartment = departmentForPage(departmentRanges.national, page);
     const province = pageContext.province
-      || provinceFromVacancy(`${fields.centre ?? ""} ${fields.applications ?? ""}`)
+      || provinceFromVacancy(`${fields.centre ?? ""} ${fields.region ?? ""} ${fields.applications ?? ""}`)
       || (provincialDepartment ? normalizeProvince(provincialDepartment) : "");
     let department = pageContext.department || nationalDepartment;
     if (department && !/^(?:Department|Office)\s+of\b/i.test(department)) {
@@ -695,18 +715,21 @@ export function parseDpsaCircularText(text: string, metadata: DpsaCircularMetada
     const telephone = extractTelephone(fields.enquiries ?? "");
     if (fields.enquiries) fields.enquiries = fields.enquiries.replace(/\bTel\s*No\s*[:.][\s\S]*$/i, "").trim();
 
-    const reAdvertisement = /\(\s*(This is a re-?advertisement[^)]*?)\)/i;
-    for (const key of ["refNo", "title"] as const) {
-      const value = key === "title" ? title : fields.refNo ?? "";
-      const match = value.match(reAdvertisement);
+    const reAdvertisement = /[\[(]\s*((?:This is a )?re-?advertisement[^)\]]*?)[)\]]/i;
+    for (const key of ["refNo", "centre", "region", "salary", "stipend", "title"] as const) {
+      const fieldValue = key === "title" ? title : fields[key] ?? "";
+      const match = fieldValue.match(reAdvertisement);
       if (!match) continue;
       fields.note = [match[1].trim(), fields.note].filter(Boolean).join(". ");
-      const cleaned = value.replace(match[0], "").replace(/\s+/g, " ").trim();
+      const cleaned = fieldValue.replace(match[0], "").replace(/\s+/g, " ").trim();
       if (key === "title") title = titleCase(cleaned);
-      else fields.refNo = cleaned;
+      else fields[key] = cleaned;
+    }
+    if (fields.refNo) {
+      fields.refNo = fields.refNo.replace(/^\s*\[?/, "").split("]", 1)[0].trim();
     }
 
-    const location = fields.centre?.split(/\r?\n/)[0]?.replace(/\s+\d+\s*$/, "").trim() || province;
+    const location = fields.region || fields.centre || province;
     const salaryValue = salary || stipend;
     const salaryBounds = extractSalaryBounds(salaryValue);
     const directorate = [fields.branch, fields.directorate].filter(Boolean).join(" — ");
@@ -726,6 +749,7 @@ export function parseDpsaCircularText(text: string, metadata: DpsaCircularMetada
       stipend,
       natureOfAppointment: fields.natureOfAppointment ?? "",
       centre: fields.centre ?? "",
+      region: fields.region ?? "",
       numberOfPosts: fields.numberOfPosts ?? "",
       title,
       positionText: `${fields.centre ?? ""} ${fields.salary ?? ""} ${fields.duties ?? ""}`,

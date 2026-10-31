@@ -113,6 +113,8 @@ function validateImportedJobs(rawJobs: FormDataEntryValue | null) {
       requiredDocuments: detailsList("requiredDocuments"),
       enquiries: detailsText("enquiries"),
       telephone: detailsText("telephone"),
+      centre: detailsText("centre"),
+      region: detailsText("region"),
       note: detailsText("note"),
       closingTime: detailsText("closingTime", 10),
       contractDuration: detailsText("contractDuration", 100),
