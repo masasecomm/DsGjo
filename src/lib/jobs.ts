@@ -8,6 +8,18 @@ export type PublicComment = Pick<
   "id" | "author_name" | "content" | "created_at"
 >;
 
+const southAfricanProvinces = [
+  "Eastern Cape",
+  "Free State",
+  "Gauteng",
+  "KwaZulu-Natal",
+  "Limpopo",
+  "Mpumalanga",
+  "Northern Cape",
+  "North West",
+  "Western Cape",
+];
+
 function getSouthAfricanDate() {
   const parts = new Intl.DateTimeFormat("en-ZA", {
     timeZone: "Africa/Johannesburg",
@@ -38,7 +50,7 @@ export async function getPublishedJobs(limit = 100, search?: string) {
   if (search?.trim()) {
     const term = search.trim().replace(/[^a-z0-9\s-]/gi, " ").replace(/\s+/g, " ").slice(0, 80).trim();
     if (term) {
-      const searchFilters = ["title", "department", "location", "province"].flatMap((column) => [
+      const searchFilters = ["title", "department", "location", "description"].flatMap((column) => [
         `and(closing_date.is.null,${column}.ilike.%${term}%)`,
         `and(closing_date.gte.${today},${column}.ilike.%${term}%)`,
       ]);
@@ -71,6 +83,28 @@ export async function getPublishedDepartments(limit = 8) {
   if (error) throw new Error(`Could not load vacancy departments: ${error.message}`);
   return [...new Set((data ?? []).map(({ department }) => department?.trim()).filter((department): department is string => Boolean(department)))]
     .slice(0, limit);
+}
+
+export async function getPublishedProvinces() {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("location,description,closing_date")
+    .eq("status", "published")
+    .or(`closing_date.is.null,closing_date.gte.${getSouthAfricanDate()}`)
+    .limit(1000);
+
+  if (error) throw new Error(`Could not load vacancy provinces: ${error.message}`);
+  const provinces = new Set<string>();
+  for (const job of data ?? []) {
+    const fact = job.description.match(/\bprovince\s*:?\s*([^•|\r\n]+)/i)?.[1]?.trim();
+    const candidate = fact || job.location?.trim() || "";
+    const province = southAfricanProvinces.find((name) => name.toLowerCase() === candidate.toLowerCase());
+    if (province) provinces.add(province);
+  }
+  return [...provinces].sort((left, right) => left.localeCompare(right));
 }
 
 export async function getPublishedJob(slug: string) {
