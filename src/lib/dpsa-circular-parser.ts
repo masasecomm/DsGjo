@@ -240,7 +240,8 @@ function findDepartmentAndProvince(prefix: string): PageContext {
     );
     if (departmentHeader) {
       const normalized = titleCase(line);
-      department = normalized.replace(/\bOf\b/g, "of").replace(/\bThe\b/g, "the");
+      const candidate = normalized.replace(/\bOf\b/g, "of").replace(/\bThe\b/g, "the");
+      department = candidate.length <= 180 ? candidate : "";
       continue;
     }
 
@@ -289,13 +290,14 @@ function findCircularPageContexts(text: string) {
     if (!sawPost) continue;
 
     const departmentHeader = line.match(/^DEPARTMENT\s+OF\s+([A-Z][A-Z&',\-\s]+?)\s*$/);
-    if (departmentHeader) {
+    if (departmentHeader && departmentHeader[1].length <= 180) {
       department = `Department of ${titleCase(departmentHeader[1].toLowerCase().trim())}`;
       contexts.set(page, { province, department });
       continue;
     }
     if (/^(?:OFFICE\s+OF\s+[A-Z]|JUDICIAL\s+INSPECTORATE|INDEPENDENT\s+POLICE|NATIONAL\s+TREASURY|STATISTICS\s+SOUTH\s+AFRICA|GOVERNMENT\s+COMMUNICATIONS?|GOVERNMENT\s+PRINTING\s+WORKS|PUBLIC\s+SERVICE\s+COMMISSION|MILITARY\s+OMBUD)\b/.test(line)) {
-      department = titleCase(line.toLowerCase().trim());
+      const candidate = titleCase(line.toLowerCase().trim());
+      department = candidate.length <= 180 ? candidate : "";
       contexts.set(page, { province, department });
     }
   }
@@ -327,11 +329,13 @@ function findDepartmentRanges(text: string) {
 }
 
 function departmentForPage(ranges: DepartmentRange[], page: number) {
-  return ranges
+  const departments = ranges
     .filter((range) => page >= range.start && page <= range.end)
     .map((range) => titleCase(range.name.toLowerCase()))
+    .filter((name) => name.length <= 180)
     .filter((name, index, names) => names.indexOf(name) === index)
     .join(", ");
+  return departments.length <= 180 ? departments : "";
 }
 
 function provinceFromVacancy(value: string) {
