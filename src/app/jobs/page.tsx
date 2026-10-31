@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Search } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { SocialLinks } from "@/components/social-links";
 import { getPublishedJobs } from "@/lib/jobs";
 
 export const metadata: Metadata = {
@@ -48,7 +49,7 @@ export default async function JobsPage({
           ))}</div> : <div className="empty-jobs"><h3>{q ? "No matching vacancies" : "No vacancies published yet"}</h3><p>{q ? "Try a different search term." : "Check back soon for new public service opportunities."}</p><Link href="/#job-alerts" className="text-link">Get job alerts <span aria-hidden="true">→</span></Link></div>}
         </section>
       </main>
-      <footer className="site-footer"><Link href="/" className="brand footer-brand"><span className="brand-mark">D</span><span className="brand-name">DPSA<span>JOBS</span></span></Link><span>Helping you find your next public service opportunity.</span><Link href="/admin/login" className="footer-admin">Admin</Link><span className="footer-copy">© {new Date().getFullYear()} DPSA Jobs</span></footer>
+      <footer className="site-footer"><Link href="/" className="brand footer-brand"><span className="brand-mark" aria-hidden="true" /><span className="brand-name">DPSA Government Jobs</span></Link><span>Helping you find your next public service opportunity.</span><SocialLinks /><Link href="/admin/login" className="footer-admin">Admin</Link><span className="footer-copy">© {new Date().getFullYear()} DPSA Government Jobs</span></footer>
     </>
   );
 }

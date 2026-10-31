@@ -20,7 +20,7 @@ export function AdminLoginForm({
   return (
     <main className="login-shell">
       <section className="login-card">
-        <Link href="/" className="brand"><span className="brand-mark">D</span><span className="brand-name">DPSA<span>JOBS</span></span></Link>
+        <Link href="/" className="brand" aria-label="DPSA Government Jobs home"><span className="brand-mark" aria-hidden="true" /><span className="brand-name">DPSA Government Jobs</span></Link>
         <h1>Welcome back.</h1>
         <p>Sign in to manage vacancies, comments, and job alerts.</p>
         {showSetup && !configured && <div className="admin-banner">Connect a Supabase project first. Add the project URL and publishable key to <code>.env.local</code>, then run the setup SQL in <code>supabase/schema.sql</code>.</div>}

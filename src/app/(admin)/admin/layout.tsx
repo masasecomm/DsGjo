@@ -16,7 +16,7 @@ async function AdminLayoutContent({
   return (
     <div className="admin-wrap">
       <header className="admin-topbar">
-        <Link href="/" className="brand"><span className="brand-mark">D</span><span className="brand-name">DPSA<span>JOBS</span></span></Link>
+        <Link href="/" className="brand" aria-label="DPSA Government Jobs home"><span className="brand-mark" aria-hidden="true" /><span className="brand-name">DPSA Government Jobs</span></Link>
         <form action={signOut}><button type="submit">Sign out</button></form>
       </header>
       <div className="admin-layout">

@@ -17,6 +17,7 @@ import {
 import { connection } from "next/server";
 import { SubscribeForm } from "@/components/subscribe-form";
 import { SiteHeader } from "@/components/site-header";
+import { SocialLinks } from "@/components/social-links";
 import { getPublishedJobs } from "@/lib/jobs";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -59,10 +60,10 @@ export default async function Home() {
               <div className="home-visual-ring home-visual-ring-two" />
               <div className="home-logo-card">
                 <Image
-                  src="/dpsa-government-jobs.png"
-                  alt="DPSA Government Jobs"
-                  width={400}
-                  height={400}
+                  src="/south-african-flag.png"
+                  alt="Round South African flag"
+                  width={560}
+                  height={560}
                   loading="eager"
                 />
               </div>
@@ -194,9 +195,11 @@ export default async function Home() {
         <div className="home-footer-main">
           <div className="home-footer-brand">
             <Link href="/" className="home-footer-logo" aria-label="DPSA Government Jobs home">
-              <Image src="/dpsa-government-jobs.png" alt="" width={400} height={400} />
+              <Image src="/south-african-flag.png" alt="" width={560} height={560} />
+              <span>DPSA Government Jobs</span>
             </Link>
             <p>Helping South Africans discover meaningful public service careers.</p>
+            <SocialLinks className="home-social-links" />
           </div>
           <div className="home-footer-column"><strong>Explore</strong><Link href="/jobs">Find vacancies</Link><Link href="/#sectors">Browse by field</Link><Link href="/#job-alerts">Job alerts</Link></div>
           <div className="home-footer-column"><strong>For applicants</strong><Link href="/jobs">Search opportunities</Link><Link href="/privacy-policy">Privacy policy</Link><Link href="/cookie-statement">Cookie statement</Link><Link href="/terms-and-conditions">Terms and conditions</Link></div>

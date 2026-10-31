@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, BriefcaseBusiness, ShieldCheck } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { SocialLinks } from "@/components/social-links";
 
 export const metadata: Metadata = {
   title: "About us",
@@ -90,8 +91,9 @@ export default function AboutPage() {
         </div>
       </main>
       <footer className="site-footer">
-        <Link href="/" className="brand footer-brand"><span className="brand-mark">D</span><span className="brand-name">DPSA<span>JOBS</span></span></Link>
+        <Link href="/" className="brand footer-brand"><span className="brand-mark" aria-hidden="true" /><span className="brand-name">DPSA Government Jobs</span></Link>
         <span>Helping you find your next public service opportunity.</span>
+        <SocialLinks />
         <Link href="/contact" className="footer-admin">Contact</Link>
         <Link href="/privacy-policy" className="footer-admin">Privacy policy</Link>
         <Link href="/terms-and-conditions" className="footer-admin">Terms</Link>

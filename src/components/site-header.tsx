@@ -6,8 +6,8 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <Link href="/" className="brand home-brand" aria-label="DPSA Government Jobs home">
-        <Image src="/dpsa-government-jobs.png" alt="" width={400} height={400} loading="eager" />
-        <span className="brand-name">DPSA<span>GOVERNMENT JOBS</span></span>
+        <Image src="/south-african-flag.png" alt="" width={560} height={560} loading="eager" />
+        <span className="brand-name">DPSA Government Jobs</span>
       </Link>
       <nav className="main-nav" aria-label="Main navigation">
         <Link href="/jobs">Find vacancies</Link>
