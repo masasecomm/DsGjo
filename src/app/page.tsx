@@ -200,7 +200,7 @@ export default async function Home() {
           </div>
           <div className="home-footer-column"><strong>Explore</strong><Link href="/jobs">Find vacancies</Link><Link href="/#sectors">Browse by field</Link><Link href="/#job-alerts">Job alerts</Link></div>
           <div className="home-footer-column"><strong>For applicants</strong><Link href="/jobs">Search opportunities</Link><Link href="/privacy-policy">Privacy policy</Link><Link href="/cookie-statement">Cookie statement</Link><Link href="/terms-and-conditions">Terms and conditions</Link></div>
-          <div className="home-footer-column"><strong>Site</strong><Link href="/contact">Contact</Link><Link href="/admin/login">Admin sign in</Link><Link href="/sitemap.xml">Sitemap</Link></div>
+          <div className="home-footer-column"><strong>Site</strong><Link href="/about">About us</Link><Link href="/contact">Contact</Link><Link href="/admin/login">Admin sign in</Link><Link href="/sitemap.xml">Sitemap</Link></div>
         </div>
         <div className="home-footer-bottom"><span>© {new Date().getFullYear()} DPSA Government Jobs</span><span>Public service opportunities, all in one place.</span></div>
       </footer>

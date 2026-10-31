@@ -11,6 +11,7 @@ export function SiteHeader() {
       </Link>
       <nav className="main-nav" aria-label="Main navigation">
         <Link href="/jobs">Find vacancies</Link>
+        <Link href="/about">About us</Link>
         <Link href="/#how-it-works">How it works</Link>
         <Link href="/#sectors">Browse by field</Link>
         <Link href="/#job-alerts" className="nav-cta">Get job alerts <ArrowUpRight size={15} /></Link>
