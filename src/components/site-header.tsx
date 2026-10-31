@@ -17,7 +17,7 @@ export function SiteHeader() {
   const [circular, setCircular] = useState<PublishedCircular | null>(null);
   const circularTitle = circular ? `DPSA CIRCULAR ${circular.number} of ${circular.year}` : "";
   const circularHref = circular
-    ? `/jobs?q=${encodeURIComponent(circularTitle)}`
+    ? `/dpsa-circular-${circular.number}-of-${circular.year}`
     : "/jobs";
 
   useEffect(() => {

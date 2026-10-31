@@ -6,9 +6,11 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { connection } from "next/server";
 import { ArrowLeft, ArrowUpRight, Banknote, CalendarDays, MapPin, MessageCircle } from "lucide-react";
 import { CommentForm } from "@/components/comment-form";
+import { VacancyCard } from "@/components/vacancy-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { getApprovedComments, getPublishedJob, isCircularJob, isJobOpen } from "@/lib/jobs";
+import { getApprovedComments, getPublishedCircularJobs, getPublishedJob, isCircularJob, isJobOpen } from "@/lib/jobs";
+import { getDpsaCircularSlug, parseDpsaCircularSlug } from "@/lib/job-slugs";
 import type { Job } from "@/lib/jobs";
 
 export const instant = false;
@@ -169,6 +171,15 @@ export async function generateMetadata({
   params: Promise<{ slug: string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const circular = slug.length === 1 ? parseDpsaCircularSlug(slug[0]) : null;
+  if (circular) {
+    const title = `DPSA Circular ${circular.number} of ${circular.year} vacancies`;
+    return {
+      title,
+      description: `Browse current South African government vacancies published in DPSA Circular ${circular.number} of ${circular.year}.`,
+      alternates: { canonical: `/${slug[0]}` },
+    };
+  }
   const requestedSlug = slug[0] === "jobs" ? slug.slice(1).join("/") : slug.join("/");
   const job = await getPublishedJob(requestedSlug);
   if (!job) return { title: "Vacancy not found" };
@@ -216,6 +227,30 @@ export default async function JobPage({
   await connection();
   const { slug } = await params;
   const isLegacyJobsPath = slug[0] === "jobs";
+  const circular = !isLegacyJobsPath && slug.length === 1 ? parseDpsaCircularSlug(slug[0]) : null;
+  if (circular) {
+    const jobs = await getPublishedCircularJobs(circular.year, circular.number);
+    if (!jobs.length) notFound();
+
+    return (
+      <>
+        <SiteHeader />
+        <main className="page-shell">
+          <section className="inner-hero">
+            <span className="section-kicker">DPSA VACANCY CIRCULAR</span>
+            <h1>DPSA Circular {circular.number} of {circular.year}</h1>
+            <p>Current vacancies published in this circular.</p>
+          </section>
+          <section className="page-content">
+            <p className="admin-subtitle">{jobs.length} {jobs.length === 1 ? "opportunity" : "opportunities"}</p>
+            <div className="list-grid">{jobs.map((job) => <VacancyCard job={job} key={job.id} />)}</div>
+          </section>
+        </main>
+        <SiteFooter />
+      </>
+    );
+  }
+
   const requestedSlug = isLegacyJobsPath ? slug.slice(1).join("/") : slug.join("/");
   const job = await getPublishedJob(requestedSlug);
   if (!job) notFound();
@@ -293,6 +328,7 @@ export default async function JobPage({
     : applicationInstructions;
   const circularUrl = safeCircularUrl(job);
   const circularLabel = circularName(job.description);
+  const circularSlug = getDpsaCircularSlug(`${job.description} ${job.source_url ?? ""}`);
   const postReference = job.description.match(/\bPost\s+([\d/]+)(?:,\s*page\s+(\d+))?/i);
   const roleFacts = [
     ["Reference number", referenceNumber],
@@ -408,7 +444,9 @@ export default async function JobPage({
     <>
       <SiteHeader />
       <main className="detail-wrap">
-        <Link href="/jobs" className="back-link"><ArrowLeft size={16} /> All vacancies</Link>
+        <Link href={circularSlug ? `/${circularSlug}` : "/jobs"} className="back-link">
+          <ArrowLeft size={16} />{circularSlug ? " DPSA Circular vacancies" : " All vacancies"}
+        </Link>
         {jobPosting && (
           <script
             type="application/ld+json"

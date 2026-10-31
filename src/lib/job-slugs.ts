@@ -5,22 +5,23 @@ function slugify(value: string) {
     .replace(/^-|-$/g, "");
 }
 
-export function getJobSlug(
-  title: string,
-  description: string,
-  referenceNumber: string | null | undefined,
-  uniqueSuffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8),
-) {
-  const circular = description.match(/\bDPSA[\s_-]+CIRCULAR[\s_-]+(\d{1,3})\s+OF\s+(20\d{2})\b/i);
-  const circularSlug = circular
+export function getDpsaCircularSlug(value: string) {
+  const circular = value.match(/\bDPSA[\s_-]+CIRCULAR[\s_-]+(\d{1,3})\s+OF\s+(20\d{2})\b/i);
+  return circular
     ? `dpsa-circular-${Number(circular[1])}-of-${circular[2]}`
-    : "dpsa-circular";
-  const titleSlug = slugify(title).slice(0, 100) || "vacancy";
-  const reference = referenceNumber?.trim()
-    || description.match(/\b(?:reference(?:\s+number)?|ref\.?(?:\s*(?:no\.?|number))?)\s*[:.\u2013\u2014-]\s*([^\r\n•]+)/i)?.[1]?.trim()
-    || "";
-  const referenceSlug = slugify(reference).slice(0, 60);
-  const uniquePart = referenceSlug ? `ref-${referenceSlug}` : uniqueSuffix;
+    : null;
+}
 
-  return `${circularSlug}/${titleSlug}-${uniquePart}`;
+export function parseDpsaCircularSlug(slug: string) {
+  const circular = slug.match(/^dpsa-circular-(\d{1,3})-of-(20\d{2})$/);
+  if (!circular) return null;
+  const number = Number(circular[1]);
+  if (number < 1 || number > 100) return null;
+  return { number, year: Number(circular[2]) };
+}
+
+export function getJobSlug(title: string, description: string, sourceUrl = "") {
+  const circularSlug = getDpsaCircularSlug(`${description} ${sourceUrl}`) ?? "dpsa-circular";
+  const titleSlug = slugify(title).slice(0, 100) || "vacancy";
+  return `${circularSlug}/${titleSlug}-ref`;
 }

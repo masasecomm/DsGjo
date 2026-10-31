@@ -168,7 +168,7 @@ function validateImportedJobs(rawJobs: FormDataEntryValue | null) {
 
     return {
       title,
-      slug: getJobSlug(title, description, referenceNumber),
+      slug: getJobSlug(title, description, sourceUrl),
       department: department || null,
       location: location || null,
       closing_date: closingDate || null,
@@ -321,7 +321,7 @@ export async function createJob(formData: FormData) {
   if (applicationUrl && !/^https:\/\//i.test(applicationUrl)) throw new Error("Application links must use HTTPS.");
 
   const referenceNumber = description.match(/\b(?:reference(?:\s+number)?|ref\.?(?:\s*(?:no\.?|number))?)\s*[:.\u2013\u2014-]\s*([^\r\n•]+)/i)?.[1]?.trim() || null;
-  const slug = getJobSlug(title, description, referenceNumber);
+  const slug = getJobSlug(title, description);
   const { error } = await supabase.from("jobs").insert({
     title,
     slug,

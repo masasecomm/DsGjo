@@ -1,12 +1,13 @@
 import type { MetadataRoute } from "next";
 import { connection } from "next/server";
-import { getPublishedJobs } from "@/lib/jobs";
+import { getPublishedCircularSlugs, getPublishedJobs } from "@/lib/jobs";
 import { getSiteUrl } from "@/lib/site-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await connection();
   const siteUrl = getSiteUrl();
   const jobs = await getPublishedJobs(50_000);
+  const circularSlugs = getPublishedCircularSlugs(jobs);
   return [
     { url: siteUrl, changeFrequency: "daily", priority: 1 },
     { url: `${siteUrl}/jobs`, changeFrequency: "daily", priority: 0.9 },
@@ -15,6 +16,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/cookie-statement`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${siteUrl}/terms-and-conditions`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${siteUrl}/contact`, changeFrequency: "yearly", priority: 0.3 },
+    ...circularSlugs.map((slug) => ({
+      url: `${siteUrl}/${slug}`,
+      changeFrequency: "daily" as const,
+      priority: 0.8,
+    })),
     ...jobs.map((job) => ({
       url: `${siteUrl}/${job.slug}`,
       lastModified: job.updated_at,

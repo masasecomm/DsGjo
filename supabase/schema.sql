@@ -11,6 +11,7 @@ create table if not exists public.jobs (
   id uuid primary key default gen_random_uuid(),
   title text not null check (char_length(title) between 5 and 180),
   slug text not null unique,
+  legacy_slugs text[] not null default '{}',
   department text,
   location text,
   closing_date date,
@@ -32,6 +33,9 @@ create table if not exists public.jobs (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.jobs
+  add column if not exists legacy_slugs text[] not null default '{}';
 
 create table if not exists public.comments (
   id uuid primary key default gen_random_uuid(),
@@ -161,8 +165,68 @@ grant insert on public.job_alert_subscribers to anon, authenticated;
 grant select, update, delete on public.job_alert_subscribers to authenticated;
 
 create index if not exists jobs_status_created_at_idx on public.jobs (status, created_at desc);
+create index if not exists jobs_legacy_slugs_gin_idx on public.jobs using gin (legacy_slugs);
 create index if not exists comments_job_status_created_at_idx on public.comments (job_id, status, created_at desc);
 create index if not exists job_alert_subscribers_status_created_at_idx on public.job_alert_subscribers (status, created_at desc);
+
+create or replace function public.set_circular_job_slug()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  circular_match text[];
+  circular_slug text;
+  title_slug text;
+  base_slug text;
+  candidate_slug text;
+  duplicate_number integer := 2;
+begin
+  circular_match := regexp_match(
+    concat_ws(' ', new.description, new.source_url),
+    'DPSA[[:space:]_-]+CIRCULAR[[:space:]_-]+([0-9]{1,3})[[:space:]]+OF[[:space:]]+(20[0-9]{2})',
+    'i'
+  );
+  circular_slug := case
+    when circular_match is null then 'dpsa-circular'
+    else 'dpsa-circular-' || circular_match[1] || '-of-' || circular_match[2]
+  end;
+  title_slug := coalesce(
+    nullif(trim(both '-' from regexp_replace(lower(new.title), '[^a-z0-9]+', '-', 'g')), ''),
+    'vacancy'
+  );
+  base_slug := circular_slug || '/' || left(title_slug, 100) || '-ref';
+
+  perform pg_advisory_xact_lock(hashtext(base_slug)::bigint);
+  candidate_slug := base_slug;
+  while exists (
+    select 1
+    from public.jobs
+    where slug = candidate_slug
+      and id is distinct from new.id
+  ) loop
+    candidate_slug := base_slug || '-' || duplicate_number;
+    duplicate_number := duplicate_number + 1;
+  end loop;
+
+  if tg_op = 'UPDATE' and old.slug is distinct from candidate_slug then
+    if old.slug <> all(coalesce(new.legacy_slugs, '{}'::text[])) then
+      new.legacy_slugs := array_append(coalesce(new.legacy_slugs, '{}'::text[]), old.slug);
+    end if;
+  end if;
+
+  new.slug := candidate_slug;
+  new.legacy_slugs := coalesce(new.legacy_slugs, '{}'::text[]);
+  return new;
+end;
+$$;
+
+drop trigger if exists set_circular_job_slug on public.jobs;
+create trigger set_circular_job_slug
+before insert or update of title, description, reference_number, source_url
+on public.jobs
+for each row
+execute function public.set_circular_job_slug();
 
 create table if not exists public.imported_dpsa_circulars (
   year integer not null check (year between 2000 and 2100),

@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getDpsaCircularSlug } from "@/lib/job-slugs";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
@@ -112,6 +113,32 @@ export async function getPublishedJobs(limit = 100, search?: string, filters: Jo
   const { data, error } = await query;
   if (error) throw new Error(`Could not load vacancies: ${error.message}`);
   return data ?? [];
+}
+
+export async function getPublishedCircularJobs(year: number, number: number) {
+  if (!isSupabaseConfigured()) return [];
+  if (!Number.isInteger(year) || !Number.isInteger(number) || number < 1 || number > 100) {
+    throw new Error("Invalid DPSA circular details.");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("id,title,slug,department,location,closing_date,description,application_url,status,created_at,updated_at")
+    .eq("status", "published")
+    .ilike("description", `%DPSA CIRCULAR ${number} of ${year}%`)
+    .or(`closing_date.is.null,closing_date.gte.${getSouthAfricanDate()}`)
+    .order("created_at", { ascending: false })
+    .limit(1000);
+
+  if (error) throw new Error(`Could not load DPSA Circular ${number} of ${year} vacancies: ${error.message}`);
+  return data ?? [];
+}
+
+export function getPublishedCircularSlugs(jobs: Pick<Job, "description">[]) {
+  return [...new Set(jobs
+    .map((job) => getDpsaCircularSlug(job.description))
+    .filter((slug): slug is string => Boolean(slug)))];
 }
 
 export async function getLatestPublishedCircular(): Promise<PublishedCircular | null> {

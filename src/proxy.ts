@@ -10,9 +10,10 @@ export async function proxy(request: NextRequest) {
     const number = Number(legacyCircularMatch[1]);
     if (number >= 1 && number <= 100) {
       const destination = request.nextUrl.clone();
-      destination.pathname = "/jobs";
-      destination.searchParams.set("q", `DPSA CIRCULAR ${number} of ${legacyCircularMatch[2]}`);
-      return NextResponse.redirect(destination, 308);
+      destination.pathname = `/dpsa-circular-${number}-of-${legacyCircularMatch[2]}`;
+      if (request.nextUrl.pathname.replace(/\/$/, "") !== destination.pathname) {
+        return NextResponse.redirect(destination, 308);
+      }
     }
   }
 

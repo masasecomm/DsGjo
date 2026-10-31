@@ -13,6 +13,7 @@ const aboutLinks = [
   ["Privacy policy", "/privacy-policy"],
   ["Cookie statement", "/cookie-statement"],
   ["Terms and conditions", "/terms-and-conditions"],
+  ["Admin sign in", "/admin/login"],
 ] as const;
 
 async function DepartmentLinks() {
