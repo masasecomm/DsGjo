@@ -3,6 +3,10 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
+export type PublishedCircular = {
+  year: number;
+  number: number;
+};
 export type PublicComment = Pick<
   Database["public"]["Tables"]["comments"]["Row"],
   "id" | "author_name" | "content" | "created_at"
@@ -100,6 +104,36 @@ export async function getPublishedJobs(limit = 100, search?: string, filters: Jo
   const { data, error } = await query;
   if (error) throw new Error(`Could not load vacancies: ${error.message}`);
   return data ?? [];
+}
+
+export async function getLatestPublishedCircular(): Promise<PublishedCircular | null> {
+  if (!isSupabaseConfigured()) return null;
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("description")
+    .eq("status", "published")
+    .or(`closing_date.is.null,closing_date.gte.${getSouthAfricanDate()}`)
+    .ilike("description", "%DPSA CIRCULAR%")
+    .order("created_at", { ascending: false })
+    .limit(1000);
+
+  if (error) throw new Error(`Could not load published circular vacancies: ${error.message}`);
+
+  const circulars = new Map<string, PublishedCircular>();
+  for (const { description } of data ?? []) {
+    for (const match of description.matchAll(/\bDPSA\s+CIRCULAR\s+(\d{1,3})\s+of\s+(20\d{2})\b/gi)) {
+      const number = Number(match[1]);
+      const year = Number(match[2]);
+      if (number < 1 || number > 100) continue;
+      circulars.set(`${year}-${number}`, { year, number });
+    }
+  }
+
+  return [...circulars.values()].sort((left, right) =>
+    right.year - left.year || right.number - left.number,
+  )[0] ?? null;
 }
 
 export async function getPopularJobSearches(limit = 6) {
