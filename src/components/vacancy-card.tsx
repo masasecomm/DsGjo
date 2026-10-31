@@ -1,6 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Banknote, Building2, BriefcaseBusiness, CalendarDays, MapPin } from "lucide-react";
-import { getJobProvince, getVacancyFact, type Job } from "@/lib/jobs";
+import { getJobProvince, getVacancyFact, isCircularJob, type Job } from "@/lib/jobs";
 
 type VacancyCardJob = Pick<
   Job,
@@ -15,13 +16,20 @@ export function VacancyCard({ job }: { job: VacancyCardJob }) {
     .replace(/\s+-\s+/g, " – ")
     .trim();
   const appointment = getVacancyFact(job.description, "appointment", "employment type");
+  const isCircular = isCircularJob(job);
   const location = job.location && job.location.toLowerCase() !== province.toLowerCase()
     ? job.location
     : "";
 
   return (
     <article className="vacancy-card">
-      <span className="vacancy-card-icon" aria-hidden="true"><Building2 size={24} /></span>
+      {isCircular ? (
+        <span className="vacancy-card-art">
+          <Image src="/south-african-coat-of-arms.png" alt="South African coat of arms" width={679} height={452} />
+        </span>
+      ) : (
+        <span className="vacancy-card-icon" aria-hidden="true"><Building2 size={24} /></span>
+      )}
       <div className="vacancy-card-content">
         <div className="vacancy-card-title">
           <h3><Link href={`/jobs/${job.slug}`}>{job.title}</Link></h3>

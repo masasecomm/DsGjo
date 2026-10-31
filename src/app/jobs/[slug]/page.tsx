@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -7,7 +8,7 @@ import { ArrowLeft, ArrowUpRight, Banknote, CalendarDays, MapPin, MessageCircle 
 import { CommentForm } from "@/components/comment-form";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { getApprovedComments, getPublishedJob, isJobOpen } from "@/lib/jobs";
+import { getApprovedComments, getPublishedJob, isCircularJob, isJobOpen } from "@/lib/jobs";
 import type { Job } from "@/lib/jobs";
 
 export const instant = false;
@@ -188,6 +189,20 @@ export async function generateMetadata({
     alternates: {
       canonical: `/jobs/${job.slug}`,
     },
+    ...(isCircularJob(job) && {
+      openGraph: {
+        images: [{
+          url: "/south-african-coat-of-arms.png",
+          width: 679,
+          height: 452,
+          alt: "South African coat of arms",
+        }],
+      },
+      twitter: {
+        card: "summary_large_image",
+        images: ["/south-african-coat-of-arms.png"],
+      },
+    }),
     ...(!isOpen && { robots: { index: false, follow: true } }),
   };
 }
@@ -397,6 +412,17 @@ export default async function JobPage({
           />
         )}
         <article className="detail-card">
+          {isCircularJob(job) && (
+            <figure className="vacancy-featured-image">
+              <Image
+                src="/south-african-coat-of-arms.png"
+                alt="South African coat of arms"
+                width={679}
+                height={452}
+                priority
+              />
+            </figure>
+          )}
           <span className="section-kicker">{job.department || "PUBLIC SERVICE VACANCY"}</span>
           <h1>{job.title}</h1>
           {salaryText && (

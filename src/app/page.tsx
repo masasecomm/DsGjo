@@ -89,7 +89,7 @@ export default async function Home() {
           <div className="home-section-heading">
             <div>
               <span className="home-kicker">TAKE THE NEXT STEP</span>
-              <h2>Latest vacancies</h2>
+              <h2>GOVERNMENT JOBS</h2>
               <p>Explore current public service roles and find the right opportunity for you.</p>
             </div>
             <Link href="/jobs" className="home-text-link">Browse all vacancies <ArrowRight size={16} /></Link>

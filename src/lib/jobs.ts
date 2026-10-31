@@ -45,6 +45,23 @@ export function getJobProvince(job: Pick<Job, "location" | "description">) {
   return southAfricanProvinces.find((province) => province.toLowerCase() === candidate.toLowerCase()) ?? "";
 }
 
+export function isCircularJob(job: Pick<Job, "description"> & Partial<Pick<Job, "source_url">>) {
+  if (/\bDPSA\s+CIRCULAR\s+\d{1,3}\s+of\s+20\d{2}\b/i.test(job.description)
+    || /\bCircular PDF:\s*https:\/\/\S+/i.test(job.description)) {
+    return true;
+  }
+
+  if (!job.source_url) return false;
+  try {
+    const url = new URL(job.source_url);
+    const path = decodeURIComponent(url.pathname);
+    return (url.hostname === "dpsa.gov.za" || url.hostname === "www.dpsa.gov.za")
+      && /\bcircular(?:[-_\s]+)?\d{1,3}\b/i.test(path);
+  } catch {
+    return false;
+  }
+}
+
 export async function getPublishedJobs(limit = 100, search?: string) {
   if (!isSupabaseConfigured()) return [];
 
