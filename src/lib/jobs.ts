@@ -35,6 +35,16 @@ export function isJobOpen(job: Pick<Job, "closing_date">) {
   return !job.closing_date || job.closing_date >= getSouthAfricanDate();
 }
 
+export function getVacancyFact(description: string, ...labels: string[]) {
+  const labelPattern = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  return description.match(new RegExp(`\\b(?:${labelPattern})\\s*:\\s*([^•|\\r\\n]+)`, "i"))?.[1]?.trim() ?? "";
+}
+
+export function getJobProvince(job: Pick<Job, "location" | "description">) {
+  const candidate = getVacancyFact(job.description, "province") || job.location?.trim() || "";
+  return southAfricanProvinces.find((province) => province.toLowerCase() === candidate.toLowerCase()) ?? "";
+}
+
 export async function getPublishedJobs(limit = 100, search?: string) {
   if (!isSupabaseConfigured()) return [];
 
@@ -99,9 +109,7 @@ export async function getPublishedProvinces() {
   if (error) throw new Error(`Could not load vacancy provinces: ${error.message}`);
   const provinces = new Set<string>();
   for (const job of data ?? []) {
-    const fact = job.description.match(/\bprovince\s*:?\s*([^•|\r\n]+)/i)?.[1]?.trim();
-    const candidate = fact || job.location?.trim() || "";
-    const province = southAfricanProvinces.find((name) => name.toLowerCase() === candidate.toLowerCase());
+    const province = getJobProvince(job);
     if (province) provinces.add(province);
   }
   return [...provinces].sort((left, right) => left.localeCompare(right));

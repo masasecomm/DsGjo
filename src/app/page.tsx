@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BriefcaseBusiness,
   Building2,
-  CalendarDays,
   CheckCircle2,
   GraduationCap,
   HeartPulse,
@@ -17,7 +16,9 @@ import {
 import { connection } from "next/server";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { getPublishedJobs } from "@/lib/jobs";
+import { ProvinceFilters } from "@/components/province-filters";
+import { VacancyCard } from "@/components/vacancy-card";
+import { getPublishedJobs, getPublishedProvinces } from "@/lib/jobs";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const instant = false;
@@ -33,7 +34,10 @@ const sectors = [
 
 export default async function Home() {
   await connection();
-  const jobs = await getPublishedJobs(6);
+  const [jobs, provinces] = await Promise.all([
+    getPublishedJobs(6),
+    getPublishedProvinces(),
+  ]);
 
   return (
     <div className="home-page">
@@ -91,21 +95,10 @@ export default async function Home() {
             <Link href="/jobs" className="home-text-link">Browse all vacancies <ArrowRight size={16} /></Link>
           </div>
           {!isSupabaseConfigured() && <div className="home-setup-notice">Connect your Supabase project and publish vacancies from the admin dashboard to show live listings here.</div>}
+          <ProvinceFilters provinces={provinces} />
           <div className="home-job-grid">
             {jobs.length > 0 ? jobs.map((job) => (
-              <article className="home-job-card" key={job.id}>
-                <div className="home-job-card-top">
-                  <span className="home-job-icon"><BriefcaseBusiness size={19} /></span>
-                  <span className="home-job-badge">OPEN</span>
-                </div>
-                <span className="home-job-department">{job.department || "Public service"}</span>
-                <h3><Link href={`/jobs/${job.slug}`}>{job.title}</Link></h3>
-                <div className="home-job-meta">
-                  {job.location && <span><MapPin size={14} />{job.location}</span>}
-                  {job.closing_date && <span><CalendarDays size={14} />Closes {new Date(`${job.closing_date}T00:00:00`).toLocaleDateString("en-ZA", { day: "numeric", month: "short" })}</span>}
-                </div>
-                <Link href={`/jobs/${job.slug}`} className="home-job-link">View vacancy <ArrowRight size={15} /></Link>
-              </article>
+              <VacancyCard job={job} key={job.id} />
             )) : (
               <div className="home-empty-jobs">
                 <span><BriefcaseBusiness size={24} /></span>
