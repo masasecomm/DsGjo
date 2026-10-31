@@ -61,7 +61,7 @@ export async function getPublishedJob(slug: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("jobs")
-    .select("id,title,slug,department,location,closing_date,reference_number,province,employment_type,source_published_at,structured_details,description,application_url,status,created_at,updated_at")
+    .select("id,title,slug,department,location,closing_date,reference_number,province,employment_type,salary_min,salary_max,salary_currency,source_published_at,structured_details,description,application_url,status,created_at,updated_at")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();

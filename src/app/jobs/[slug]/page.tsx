@@ -46,13 +46,54 @@ export default async function JobPage({
 
   const comments = await getApprovedComments(job.id);
   const isOpen = isJobOpen(job);
-  const closingTime = typeof job.structured_details === "object"
+  const structuredDetails = typeof job.structured_details === "object"
     && job.structured_details !== null
     && !Array.isArray(job.structured_details)
-    && typeof job.structured_details.closingTime === "string"
-    && /^\d{2}:\d{2}$/.test(job.structured_details.closingTime)
-    ? job.structured_details.closingTime
+    ? job.structured_details
+    : null;
+  const closingTime = typeof structuredDetails?.closingTime === "string"
+    && /^\d{2}:\d{2}$/.test(structuredDetails.closingTime)
+    ? structuredDetails.closingTime
     : "23:59";
+  const experienceRequirements = typeof structuredDetails?.experience === "string"
+    ? structuredDetails.experience.trim()
+    : "";
+  const salaryMin = typeof job.salary_min === "number" && Number.isFinite(job.salary_min) && job.salary_min >= 0
+    ? job.salary_min
+    : null;
+  const salaryMax = typeof job.salary_max === "number" && Number.isFinite(job.salary_max) && job.salary_max >= 0
+    ? job.salary_max
+    : null;
+  const salaryUnit = typeof structuredDetails?.salaryBasis === "string"
+    ? /\b(?:per\s+(?:annum|year)|annually|yearly)\b/i.test(structuredDetails.salaryBasis)
+      ? "YEAR"
+      : /\b(?:per\s+month|monthly)\b/i.test(structuredDetails.salaryBasis)
+        ? "MONTH"
+        : /\b(?:per\s+week|weekly)\b/i.test(structuredDetails.salaryBasis)
+          ? "WEEK"
+          : /\b(?:per\s+day|daily)\b/i.test(structuredDetails.salaryBasis)
+            ? "DAY"
+            : /\b(?:per\s+hour|hourly)\b/i.test(structuredDetails.salaryBasis)
+              ? "HOUR"
+              : undefined
+    : undefined;
+  const salaryRangeIsValid = salaryMin === null || salaryMax === null || salaryMin <= salaryMax;
+  const salaryNumber = salaryMin ?? salaryMax;
+  const salaryValue = salaryMin !== null && salaryMax !== null
+    ? { "@type": "QuantitativeValue", minValue: salaryMin, maxValue: salaryMax, ...(salaryUnit && { unitText: salaryUnit }) }
+    : salaryNumber !== null && salaryUnit
+      ? { "@type": "QuantitativeValue", value: salaryNumber, unitText: salaryUnit }
+      : salaryNumber;
+  const baseSalary = salaryRangeIsValid
+    && salaryValue !== null
+    && typeof job.salary_currency === "string"
+    && /^[A-Z]{3}$/.test(job.salary_currency)
+    ? {
+        "@type": "MonetaryAmount",
+        currency: job.salary_currency,
+        value: salaryValue,
+      }
+    : undefined;
   const jobPosting = isOpen && (job.location || job.province)
     ? {
         "@context": "https://schema.org",
@@ -70,6 +111,8 @@ export default async function JobPage({
         validThrough: job.closing_date
           ? `${job.closing_date}T${closingTime}:59+02:00`
           : undefined,
+        ...(baseSalary && { baseSalary }),
+        ...(experienceRequirements && { experienceRequirements }),
         employmentType: ({
           permanent: "FULL_TIME",
           "full-time": "FULL_TIME",
