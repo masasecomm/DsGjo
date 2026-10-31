@@ -3,6 +3,9 @@ import { dpsaBrowserRequestHeaders } from "@/lib/dpsa-circular-discovery-server"
 import { requireAdmin } from "@/lib/admin";
 
 const maxFileSize = 25 * 1024 * 1024;
+const downloadTimeoutMs = 90_000;
+
+export const maxDuration = 120;
 
 export async function GET(
   _request: Request,
@@ -25,17 +28,25 @@ export async function GET(
   try {
     upstream = await fetch(buildDpsaCircularPdfUrl(year, number), {
       cache: "no-store",
-      redirect: "error",
+      redirect: "follow",
       headers: dpsaBrowserRequestHeaders(
         `https://www.dpsa.gov.za/newsroom/psvc/circular-${number}-of-${year}/`,
         "application/pdf,application/octet-stream;q=0.9,*/*;q=0.8",
       ),
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(downloadTimeoutMs),
     });
   } catch (error) {
     if (error instanceof Error) {
       console.error("Could not fetch an official DPSA circular.", error.message);
-      return Response.json({ error: "Could not download the DPSA circular. Please try again later." }, { status: 502 });
+      const timedOut = error.name === "TimeoutError";
+      return Response.json(
+        {
+          error: timedOut
+            ? "The official DPSA PDF download took too long. Please try again."
+            : "Could not download the DPSA circular. Please try again later.",
+        },
+        { status: timedOut ? 504 : 502 },
+      );
     }
     throw error;
   }
@@ -46,10 +57,6 @@ export async function GET(
   if (!upstream.ok) {
     return Response.json({ error: `The DPSA PDF server returned HTTP ${upstream.status}.` }, { status: 502 });
   }
-  if (!upstream.headers.get("content-type")?.toLowerCase().includes("application/pdf")) {
-    return Response.json({ error: "The official DPSA circular did not return a PDF file." }, { status: 502 });
-  }
-
   const contentLength = Number(upstream.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > maxFileSize) {
     return Response.json({ error: "This DPSA circular exceeds the 25 MB import limit." }, { status: 413 });
@@ -82,7 +89,7 @@ export async function GET(
     return Response.json(
       {
         error: timedOut
-          ? "The official DPSA PDF download timed out. Please try again."
+          ? "The official DPSA PDF download took too long. Please try again."
           : "The official DPSA PDF download was interrupted. Please try again.",
       },
       { status: timedOut ? 504 : 502 },
@@ -95,6 +102,12 @@ export async function GET(
     pdf.set(chunk, offset);
     offset += chunk.byteLength;
   }
+  const contentType = upstream.headers.get("content-type")?.toLowerCase() ?? "";
+  const hasPdfSignature = new TextDecoder().decode(pdf.subarray(0, 4)) === "%PDF";
+  if (!hasPdfSignature && !contentType.includes("pdf")) {
+    return Response.json({ error: "The official DPSA circular did not return a PDF file." }, { status: 502 });
+  }
+
   return new Response(pdf, {
     headers: {
       "Cache-Control": "private, no-store",
