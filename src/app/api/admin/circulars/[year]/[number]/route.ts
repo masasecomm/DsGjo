@@ -61,15 +61,32 @@ export async function GET(
 
   const chunks: Uint8Array[] = [];
   let size = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > maxFileSize) {
-      await reader.cancel();
-      return Response.json({ error: "This DPSA circular exceeds the 25 MB import limit." }, { status: 413 });
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxFileSize) {
+        try {
+          await reader.cancel();
+        } catch (error) {
+          console.error(`Could not cancel oversized DPSA PDF stream (${year}-${number}).`, error);
+        }
+        return Response.json({ error: "This DPSA circular exceeds the 25 MB import limit." }, { status: 413 });
+      }
+      chunks.push(value);
     }
-    chunks.push(value);
+  } catch (error) {
+    const timedOut = error instanceof Error && error.name === "TimeoutError";
+    console.error(`Could not read DPSA PDF stream (${year}-${number}).`, error);
+    return Response.json(
+      {
+        error: timedOut
+          ? "The official DPSA PDF download timed out. Please try again."
+          : "The official DPSA PDF download was interrupted. Please try again.",
+      },
+      { status: timedOut ? 504 : 502 },
+    );
   }
 
   const pdf = new Uint8Array(size);
