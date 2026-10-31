@@ -8,6 +8,9 @@ import { getPublishedJobs } from "@/lib/jobs";
 export const metadata: Metadata = {
   title: "Government vacancies",
   description: "Search the latest South African government and public service vacancies.",
+  alternates: {
+    canonical: "/jobs",
+  },
 };
 
 export const instant = false;

@@ -14,7 +14,7 @@ Firebase is not required for this setup. GitHub Pages alone cannot run the serve
 
 1. Install Node.js 20.9 or newer.
 2. Copy `.env.example` to `.env.local`.
-3. Add the public URL and publishable key from your Supabase project to `.env.local`.
+3. Add the public URL and publishable key from your Supabase project to `.env.local`. Set `NEXT_PUBLIC_SITE_URL=https://ds-gjo.vercel.app` until the custom domain is moved to this Vercel project.
 4. Run `npm install`, then `npm run dev`.
 
 The homepage and visual layout can be previewed without Supabase. Vacancy publishing, comments, subscriptions, and admin sign-in require a configured Supabase project.
@@ -34,6 +34,8 @@ The homepage and visual layout can be previewed without Supabase. Vacancy publis
 
 5. Add the project URL and publishable key to `.env.local`, and to Vercel’s environment variables for Production, Preview, and Development as appropriate.
 6. Deploy the project to Vercel and add the GitHub repository under the Vercel project’s Git settings for automatic deploys.
+
+The app uses Vercel’s production domain for canonical URLs, `robots.txt`, and the sitemap. Locally, `NEXT_PUBLIC_SITE_URL` supplies the site URL. Published vacancies with future closing dates are included in the sitemap; expired vacancies are hidden from public listings and marked `noindex`. Individual open vacancies with a parsed location include Google `JobPosting` structured data. After deployment, verify the production domain in Google Search Console and submit `/sitemap.xml`; indexing and job-search rich results are subject to Google’s review and are not guaranteed.
 
 The schema enables row-level security. Public visitors can read published vacancies and approved comments, submit comments for review, and add their email to the alert list. Only admins can manage vacancies, moderate comments, or read subscriber emails. Never put a Supabase service-role key in browser code or `NEXT_PUBLIC_*` variables.
 

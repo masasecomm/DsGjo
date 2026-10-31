@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cardo, Inter } from "next/font/google";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,6 +16,10 @@ const cardo = Cardo({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
+  alternates: {
+    canonical: "/",
+  },
   title: {
     default: "DPSA Jobs | South African Government Vacancies",
     template: "%s | DPSA Jobs",

@@ -8,10 +8,26 @@ export type PublicComment = Pick<
   "id" | "author_name" | "content" | "created_at"
 >;
 
+function getSouthAfricanDate() {
+  const parts = new Intl.DateTimeFormat("en-ZA", {
+    timeZone: "Africa/Johannesburg",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function isJobOpen(job: Pick<Job, "closing_date">) {
+  return !job.closing_date || job.closing_date >= getSouthAfricanDate();
+}
+
 export async function getPublishedJobs(limit = 100, search?: string) {
   if (!isSupabaseConfigured()) return [];
 
   const supabase = await createSupabaseServerClient();
+  const today = getSouthAfricanDate();
   let query = supabase
     .from("jobs")
     .select("id,title,slug,department,location,closing_date,description,application_url,status,created_at,updated_at")
@@ -21,7 +37,17 @@ export async function getPublishedJobs(limit = 100, search?: string) {
 
   if (search?.trim()) {
     const term = search.trim().replace(/[^a-z0-9\s-]/gi, " ").replace(/\s+/g, " ").slice(0, 80).trim();
-    if (term) query = query.or(`title.ilike.%${term}%,department.ilike.%${term}%,location.ilike.%${term}%`);
+    if (term) {
+      const searchFilters = ["title", "department", "location"].flatMap((column) => [
+        `and(closing_date.is.null,${column}.ilike.%${term}%)`,
+        `and(closing_date.gte.${today},${column}.ilike.%${term}%)`,
+      ]);
+      query = query.or(searchFilters.join(","));
+    } else {
+      query = query.or(`closing_date.is.null,closing_date.gte.${today}`);
+    }
+  } else {
+    query = query.or(`closing_date.is.null,closing_date.gte.${today}`);
   }
 
   const { data, error } = await query;
@@ -35,7 +61,7 @@ export async function getPublishedJob(slug: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("jobs")
-    .select("id,title,slug,department,location,closing_date,description,application_url,status,created_at,updated_at")
+    .select("id,title,slug,department,location,closing_date,reference_number,province,employment_type,source_published_at,structured_details,description,application_url,status,created_at,updated_at")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
