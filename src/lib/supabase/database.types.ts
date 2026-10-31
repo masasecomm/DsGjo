@@ -225,6 +225,31 @@ export type Database = {
         };
         Returns: boolean;
       };
+      record_public_page_view: {
+        Args: {
+          p_page_path: string;
+        };
+        Returns: boolean;
+      };
+      get_admin_popular_job_searches: {
+        Args: {
+          p_limit?: number;
+        };
+        Returns: {
+          search_term: string;
+          search_count: number;
+        }[];
+      };
+      get_admin_top_viewed_pages: {
+        Args: {
+          p_limit?: number;
+        };
+        Returns: {
+          page_path: string;
+          page_title: string;
+          view_count: number;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

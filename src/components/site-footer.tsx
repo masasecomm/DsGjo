@@ -19,7 +19,7 @@ async function DepartmentLinks() {
   await connection();
   const departments = await getPublishedDepartments(8);
   return departments.map((department) => (
-    <Link href={`/jobs?q=${encodeURIComponent(department)}`} key={department}>{department}</Link>
+    <Link href={`/jobs?department=${encodeURIComponent(department)}`} key={department}>{department}</Link>
   ));
 }
 
@@ -27,7 +27,7 @@ async function ProvinceLinks() {
   await connection();
   const provinces = await getPublishedProvinces();
   return provinces.map((province) => (
-    <Link href={`/jobs?q=${encodeURIComponent(province)}`} key={province}>{province}</Link>
+    <Link href={`/jobs?province=${encodeURIComponent(province)}`} key={province}>{province}</Link>
   ));
 }
 

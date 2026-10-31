@@ -28,7 +28,7 @@ export default async function Home() {
     getPublishedJobs(6),
     getPublishedProvinces(),
     getPublishedDepartments(100),
-    getPopularJobSearches(),
+    getPopularJobSearches(5),
   ]);
 
   return (

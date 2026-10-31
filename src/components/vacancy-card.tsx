@@ -50,7 +50,7 @@ export function VacancyCard({ job }: { job: VacancyCardJob }) {
           <div className="vacancy-card-tags">
             {appointment && <span className="vacancy-card-type">{appointment}</span>}
             {province && (
-              <Link className="vacancy-card-type vacancy-card-province" href={`/jobs?q=${encodeURIComponent(province)}`}>
+              <Link className="vacancy-card-type vacancy-card-province" href={`/jobs?province=${encodeURIComponent(province)}`}>
                 {province}
               </Link>
             )}

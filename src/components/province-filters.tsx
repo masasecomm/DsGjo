@@ -8,7 +8,7 @@ export function ProvinceFilters({
   activeProvince?: string;
 }) {
   return (
-    <nav className="province-filters" aria-label="Browse vacancies by province">
+    <nav className="province-filters" id="provinces" aria-label="Browse vacancies by province">
       <Link className={`province-filter${activeProvince ? "" : " is-active"}`} href="/jobs" aria-current={activeProvince ? undefined : "page"}>
         All
       </Link>
@@ -17,7 +17,7 @@ export function ProvinceFilters({
         return (
           <Link
             className={`province-filter${isActive ? " is-active" : ""}`}
-            href={`/jobs?q=${encodeURIComponent(province)}`}
+            href={`/jobs?province=${encodeURIComponent(province)}`}
             key={province}
             aria-current={isActive ? "page" : undefined}
           >

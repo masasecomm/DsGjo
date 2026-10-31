@@ -22,7 +22,7 @@ The homepage and visual layout can be previewed without Supabase. Vacancy publis
 ## Supabase setup
 
 1. Create a Supabase project.
-2. Open **SQL Editor**, run [`supabase/schema.sql`](./supabase/schema.sql), then wait for it to finish. If this project already has the earlier schema, run [`supabase/migrations/20261030_add_imported_dpsa_circulars.sql`](./supabase/migrations/20261030_add_imported_dpsa_circulars.sql) if circular tracking is not installed yet, followed by [`supabase/migrations/20261030_add_structured_dpsa_job_details.sql`](./supabase/migrations/20261030_add_structured_dpsa_job_details.sql) to add structured vacancy data and support larger circular imports.
+2. Open **SQL Editor**, run [`supabase/schema.sql`](./supabase/schema.sql), then wait for it to finish. If this project already has the earlier schema, run [`supabase/migrations/20261030_add_imported_dpsa_circulars.sql`](./supabase/migrations/20261030_add_imported_dpsa_circulars.sql) if circular tracking is not installed yet, followed by [`supabase/migrations/20261030_add_structured_dpsa_job_details.sql`](./supabase/migrations/20261030_add_structured_dpsa_job_details.sql) to add structured vacancy data and support larger circular imports. To enable actual popular-search counts and the admin search/page-view reports, run [`supabase/migrations/20261031_add_job_search_analytics.sql`](./supabase/migrations/20261031_add_job_search_analytics.sql) followed by [`supabase/migrations/20261031_add_page_view_analytics.sql`](./supabase/migrations/20261031_add_page_view_analytics.sql).
 3. In **Authentication → Users**, create your administrator account.
 4. In SQL Editor, promote that account (replace the address):
 

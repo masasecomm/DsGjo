@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Jost } from "next/font/google";
+import { Suspense } from "react";
 import { getSiteUrl } from "@/lib/site-url";
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import "./globals.css";
 
 const jost = Jost({
@@ -23,5 +25,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
-  return <html lang="en" className={jost.variable}><body>{children}</body></html>;
+  return <html lang="en" className={jost.variable}><body><Suspense fallback={null}><PageViewTracker /></Suspense>{children}</body></html>;
 }
