@@ -174,11 +174,16 @@ export async function generateMetadata({
   const facts = labelledValues(sectionItems(sections.facts));
   const province = cleanCopy(job.province || facts.get("province") || "");
   const closingDateValue = job.closing_date || facts.get("closing date") || "";
-  const closingDate = closingDateValue ? ` Applications close on ${formatClosingDate(closingDateValue)}.` : "";
-  const description = `${cleanCopy(job.title)} at ${cleanCopy(job.department || "the South African public service")}${province ? ` in ${province}` : ""}. See the salary, requirements and application details.${closingDate}`;
+  const deadline = closingDateValue ? ` Apply by ${formatClosingDate(closingDateValue)}.` : "";
+  const department = cleanCopy(job.department || "the South African public service");
+  const employer = /^department\b/i.test(department) ? `the ${department}` : department;
+  const descriptionBody = `${cleanCopy(job.title)} at ${employer}${province ? `, ${province}` : ""}. Salary, requirements and application details.`;
+  const description = descriptionBody.length + deadline.length <= 160
+    ? `${descriptionBody}${deadline}`
+    : `${descriptionBody.slice(0, 159 - deadline.length).replace(/\s+\S*$/, "").trimEnd()}…${deadline}`;
   return {
     title: `${cleanCopy(job.title)}${job.department ? ` – ${cleanCopy(job.department)}` : ""}`,
-    description: description.length <= 160 ? description : `${description.slice(0, 157).replace(/\s+\S*$/, "")}…`,
+    description,
     alternates: {
       canonical: `/jobs/${job.slug}`,
     },
@@ -284,13 +289,18 @@ export default async function JobPage({
   const professionalRegistration = detailText(structuredDetails, "professionalRegistration");
   const driversLicense = detailText(structuredDetails, "driversLicense");
   const contractDuration = detailText(structuredDetails, "contractDuration") || extraValue("contract duration");
+  const salaryAmounts = Array.from(salaryText.matchAll(/\bR\s*([0-9][0-9 ,]*(?:\.[0-9]+)?)/gi))
+    .map((match) => Number(match[1].replace(/[ ,]/g, "")))
+    .filter((amount) => Number.isFinite(amount) && amount >= 0);
+  const parsedSalaryMin = salaryAmounts.length ? Math.min(...salaryAmounts) : null;
+  const parsedSalaryMax = salaryAmounts.length ? Math.max(...salaryAmounts) : null;
   const salaryMin = typeof job.salary_min === "number" && Number.isFinite(job.salary_min) && job.salary_min >= 0
     ? job.salary_min
-    : null;
+    : parsedSalaryMin;
   const salaryMax = typeof job.salary_max === "number" && Number.isFinite(job.salary_max) && job.salary_max >= 0
     ? job.salary_max
-    : null;
-  const salaryBasis = detailText(structuredDetails, "salaryBasis");
+    : parsedSalaryMax;
+  const salaryBasis = detailText(structuredDetails, "salaryBasis") || salaryText;
   const salaryUnit = salaryBasis
     ? /\b(?:per\s+(?:annum|year)|annually|yearly)\b/i.test(salaryBasis)
       ? "YEAR"
@@ -306,18 +316,18 @@ export default async function JobPage({
     : undefined;
   const salaryRangeIsValid = salaryMin === null || salaryMax === null || salaryMin <= salaryMax;
   const salaryNumber = salaryMin ?? salaryMax;
-  const salaryValue = salaryMin !== null && salaryMax !== null
+  const salaryValue = salaryMin !== null && salaryMax !== null && salaryMin !== salaryMax
     ? { "@type": "QuantitativeValue", minValue: salaryMin, maxValue: salaryMax, ...(salaryUnit && { unitText: salaryUnit }) }
     : salaryNumber !== null && salaryUnit
       ? { "@type": "QuantitativeValue", value: salaryNumber, unitText: salaryUnit }
       : salaryNumber;
   const baseSalary = salaryRangeIsValid
     && salaryValue !== null
-    && typeof job.salary_currency === "string"
-    && /^[A-Z]{3}$/.test(job.salary_currency)
+    && (typeof job.salary_currency === "string" && /^[A-Z]{3}$/.test(job.salary_currency)
+      || /\bR\s*\d/i.test(salaryText))
     ? {
         "@type": "MonetaryAmount",
-        currency: job.salary_currency,
+        currency: job.salary_currency && /^[A-Z]{3}$/.test(job.salary_currency) ? job.salary_currency : "ZAR",
         value: salaryValue,
       }
     : undefined;
