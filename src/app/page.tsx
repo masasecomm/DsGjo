@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
   BriefcaseBusiness,
-  CheckCircle2,
+  Building2,
+  ChevronDown,
   MapPin,
   Search,
 } from "lucide-react";
@@ -12,16 +12,23 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ProvinceFilters } from "@/components/province-filters";
 import { VacancyCard } from "@/components/vacancy-card";
-import { getPublishedJobs, getPublishedProvinces } from "@/lib/jobs";
+import {
+  getPopularJobSearches,
+  getPublishedDepartments,
+  getPublishedJobs,
+  getPublishedProvinces,
+} from "@/lib/jobs";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const instant = false;
 
 export default async function Home() {
   await connection();
-  const [jobs, provinces] = await Promise.all([
+  const [jobs, provinces, departments, popularSearches] = await Promise.all([
     getPublishedJobs(6),
     getPublishedProvinces(),
+    getPublishedDepartments(100),
+    getPopularJobSearches(),
   ]);
 
   return (
@@ -33,40 +40,38 @@ export default async function Home() {
           <div className="home-hero-orb home-hero-orb-two" aria-hidden="true" />
           <div className="home-hero-inner">
             <div className="home-hero-copy">
-              <span className="home-eyebrow"><span /> SOUTH AFRICAN PUBLIC SERVICE CAREERS</span>
-              <h1>Find your place<br />in <span>public service.</span></h1>
-              <p>Discover government opportunities across South Africa and take the next step in a career that serves our communities.</p>
+              <h1>Popular Searches</h1>
+              <p>Find government vacancies by job title, province or department.</p>
               <form action="/jobs" className="home-search">
-                <Search size={19} aria-hidden="true" />
-                <input aria-label="Search vacancies" name="q" placeholder="Job title, department or location" />
-                <button type="submit">Find vacancies <ArrowRight size={16} /></button>
+                <label className="home-search-field home-search-keywords">
+                  <Search size={21} aria-hidden="true" />
+                  <input aria-label="Job title or keywords" name="q" placeholder="Job title, keywords..." />
+                </label>
+                <label className="home-search-field">
+                  <MapPin size={21} aria-hidden="true" />
+                  <select aria-label="Province" name="province" defaultValue="">
+                    <option value="">All Provinces</option>
+                    {provinces.map((province) => <option key={province} value={province}>{province}</option>)}
+                  </select>
+                  <ChevronDown size={16} aria-hidden="true" />
+                </label>
+                <label className="home-search-field">
+                  <Building2 size={20} aria-hidden="true" />
+                  <select aria-label="Department" name="department" defaultValue="">
+                    <option value="">All Departments</option>
+                    {departments.map((department) => <option key={department} value={department}>{department}</option>)}
+                  </select>
+                  <ChevronDown size={16} aria-hidden="true" />
+                </label>
+                <button type="submit">Find Jobs <ArrowRight size={17} /></button>
               </form>
-              <div className="home-search-hint"><MapPin size={14} /> Opportunities from across South Africa</div>
-            </div>
-            <div className="home-hero-visual" aria-label="DPSA Government Jobs">
-              <div className="home-visual-ring home-visual-ring-one" />
-              <div className="home-visual-ring home-visual-ring-two" />
-              <div className="home-logo-card">
-                <Image
-                  src="/south-african-flag.png"
-                  alt="Round South African flag"
-                  width={560}
-                  height={560}
-                  loading="eager"
-                />
+              <div className="home-popular-searches">
+                <strong>Popular Searches:</strong>
+                {popularSearches.length ? popularSearches.map(({ search_term }) => (
+                  <Link href={`/jobs?q=${encodeURIComponent(search_term)}`} key={search_term}>{search_term}</Link>
+                )) : <span>Popular terms will appear as vacancy searches are made.</span>}
               </div>
-              <div className="home-visual-note">
-                <span><CheckCircle2 size={20} /></span>
-                <div><strong>Your next opportunity</strong><small>Start your search today</small></div>
-              </div>
-              <span className="home-visual-star home-visual-star-one" aria-hidden="true">✦</span>
-              <span className="home-visual-star home-visual-star-two" aria-hidden="true">✧</span>
             </div>
-          </div>
-          <div className="home-hero-bottom">
-            <span>{jobs.length ? `${jobs.length} recent opportunities` : "Explore a career with purpose"}</span>
-            <span className="home-hero-rule" />
-            <span>Across South Africa</span>
           </div>
         </section>
 

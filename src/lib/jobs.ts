@@ -62,7 +62,12 @@ export function isCircularJob(job: Pick<Job, "description"> & Partial<Pick<Job, 
   }
 }
 
-export async function getPublishedJobs(limit = 100, search?: string) {
+export type JobSearchFilters = {
+  province?: string;
+  department?: string;
+};
+
+export async function getPublishedJobs(limit = 100, search?: string, filters: JobSearchFilters = {}) {
   if (!isSupabaseConfigured()) return [];
 
   const supabase = await createSupabaseServerClient();
@@ -74,24 +79,54 @@ export async function getPublishedJobs(limit = 100, search?: string) {
     .order("created_at", { ascending: false })
     .limit(limit);
 
+  if (filters.province) {
+    const province = southAfricanProvinces.find((name) => name.toLowerCase() === filters.province?.trim().toLowerCase());
+    if (province) query = query.ilike("description", `%Province: ${province}%`);
+  }
+  if (filters.department?.trim()) {
+    query = query.eq("department", filters.department.trim().slice(0, 180));
+  }
+
   if (search?.trim()) {
     const term = search.trim().replace(/[^a-z0-9\s-]/gi, " ").replace(/\s+/g, " ").slice(0, 80).trim();
     if (term) {
-      const searchFilters = ["title", "department", "location", "description"].flatMap((column) => [
-        `and(closing_date.is.null,${column}.ilike.%${term}%)`,
-        `and(closing_date.gte.${today},${column}.ilike.%${term}%)`,
-      ]);
+      const searchFilters = ["title", "department", "location", "description"]
+        .map((column) => `${column}.ilike.%${term}%`);
       query = query.or(searchFilters.join(","));
-    } else {
-      query = query.or(`closing_date.is.null,closing_date.gte.${today}`);
     }
-  } else {
-    query = query.or(`closing_date.is.null,closing_date.gte.${today}`);
   }
 
+  query = query.or(`closing_date.is.null,closing_date.gte.${today}`);
   const { data, error } = await query;
   if (error) throw new Error(`Could not load vacancies: ${error.message}`);
   return data ?? [];
+}
+
+export async function getPopularJobSearches(limit = 6) {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("get_popular_job_searches", {
+    p_limit: Math.max(1, Math.min(limit, 8)),
+  });
+  if (error) {
+    console.error("Could not load popular job searches. Apply the job search analytics migration to enable this feature.", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function recordPopularJobSearch(searchTerm: string) {
+  const term = searchTerm.trim().replace(/\s+/g, " ").slice(0, 80);
+  if (!isSupabaseConfigured() || term.length < 2 || /[^\s@]+@[^\s@]+\.[^\s@]+/.test(term)) return;
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("record_public_job_search", {
+    p_search_term: term,
+  });
+  if (error) {
+    console.error("Could not record an anonymous job search. Apply the job search analytics migration to enable this feature.", error.message);
+  }
 }
 
 export async function getPublishedDepartments(limit = 8) {

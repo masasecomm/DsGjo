@@ -71,7 +71,7 @@ export default function PrivacyPolicyPage() {
                   <li><strong>Administrator access:</strong> administrator account information is used to sign in and manage the website; visitors do not need an account to browse vacancies.</li>
                 </ul>
                 <h3>Technical information</h3>
-                <p>Our hosting and database providers may process technical information, such as IP address, browser details, and request logs, to deliver the site and help protect its security. This site does not currently use analytics to build visitor profiles, save job-search preferences, or send newsletters.</p>
+                <p>When you search vacancies, we store the search term and daily search count in aggregate to show popular searches. We do not attach these records to an account, name, or visitor profile. Search terms are kept for the purpose of calculating popular searches over the most recent 30 days. Our hosting and database providers may separately process technical information, such as IP address, browser details, and request logs, to deliver the site and help protect its security.</p>
                 <p>Essential cookies may be used for administrator sign-in and session security. We do not currently use advertising or analytics cookies.</p>
               </div>
             </section>

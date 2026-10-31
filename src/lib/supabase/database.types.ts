@@ -210,6 +210,21 @@ export type Database = {
         };
         Returns: number;
       };
+      get_popular_job_searches: {
+        Args: {
+          p_limit?: number;
+        };
+        Returns: {
+          search_term: string;
+          search_count: number;
+        }[];
+      };
+      record_public_job_search: {
+        Args: {
+          p_search_term: string;
+        };
+        Returns: boolean;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
