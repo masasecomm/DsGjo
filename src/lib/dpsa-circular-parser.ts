@@ -562,57 +562,58 @@ function buildDescription(
   page: number,
   extractedDetails: ParsedVacancyDetails,
 ) {
-  const employment = vacancy.employment_type ? `a ${vacancy.employment_type.toLowerCase()} opportunity` : "an opportunity";
-  const location = vacancy.location || vacancy.province || "a location not stated in the circular";
+  const department = vacancy.department || "The hiring department";
+  const appointment = vacancy.employment_type?.toLowerCase() || "permanent";
+  const article = /^[aeiou]/i.test(appointment) ? "an" : "a";
+  const employment = `${article} ${appointment} role`;
+  const location = vacancy.province ? ` in ${vacancy.province}` : "";
   const lines = [
-    `${circular.name || "DPSA vacancy circular"}: ${vacancy.department || "This department"} is looking for ${vacancy.title}, ${employment} based in ${location}.`,
+    `${department} is seeking a ${vacancy.title} for ${employment}${location}.`,
   ];
-  if (circular.date) lines.push(`Published in ${circular.name || "the circular"} released ${circular.date}.`);
-  if (circular.link) lines.push(`Circular PDF: ${circular.link}`);
-  lines.push(`Post ${vacancy.post_number}${page > 0 ? ` on page ${page}` : ""} of the circular.`);
+  if (vacancy.closing_date) lines.push(`Applications close on ${vacancy.closing_date}.`);
+  if (circular.name) lines.push(`${circular.name}${circular.date ? `, issued ${circular.date}` : ""}.`);
+  lines.push(`Post ${vacancy.post_number}${page > 0 ? `, page ${page}` : ""}.`);
 
-  lines.push("", "VACANCY FACT SHEET");
+  lines.push("", "At a glance");
   const quickView: Array<[string, string]> = [
     ["Reference number", vacancy.reference_number],
-    ["Job title", vacancy.title],
-    ["Department", vacancy.department],
-    ["Employment type", vacancy.employment_type ?? "Not stated in the circular"],
+    ["Appointment", vacancy.employment_type ?? ""],
     ["Province", vacancy.province],
     ["Closing date", vacancy.closing_date],
   ];
-  for (const [label, value] of quickView) if (value) lines.push(`• ${label}: ${value}`);
+  for (const [label, value] of quickView) if (value) lines.push(`${label}: ${value}`);
 
-  lines.push("", "MORE VACANCY DETAILS");
+  lines.push("", "Role details");
   const details: Array<[string, string]> = [
     ["Centres", fields.centre ?? ""],
     ["Region", fields.region ?? ""],
     ["Location", vacancy.location],
     ["Job level", vacancy.level ? `Level ${vacancy.level}` : ""],
-    ["Salary", [vacancy.salary, vacancy.stipend].filter(Boolean).join(" ")],
+    ["Salary or stipend", [vacancy.salary, vacancy.stipend].filter(Boolean).join(" ")],
     ["Grade level", vacancy.grade],
     ["Cluster", fields.cluster ?? ""],
     ["Chief directorate", fields.chiefDirectorate ?? ""],
     ["Directorate", vacancy.directorate],
   ];
-  for (const [label, value] of details) if (value) lines.push(`• ${label}: ${value}`);
+  for (const [label, value] of details) if (value) lines.push(`${label}: ${value}`);
 
-  if (vacancy.job_purpose) lines.push("", "JOB PURPOSE", vacancy.job_purpose);
+  if (vacancy.job_purpose) lines.push("", "About the role", vacancy.job_purpose);
   const requirements = toList(vacancy.requirements);
-  if (requirements.length) lines.push("", "JOB REQUIREMENTS", ...requirements.map((item) => `• ${item}`));
+  if (requirements.length) lines.push("", "What you will need", ...requirements.map((item) => `• ${item}`));
   const duties = toList(vacancy.duties);
   if (duties.length) {
-    lines.push("", `DUTIES (according to ${circular.name || "the DPSA circular"})`, ...duties.map((item) => `• ${item}`));
+    lines.push("", "Key responsibilities", ...duties.map((item) => `• ${item}`));
   }
   const skills = toList(fields.skillsAndCompetencies ?? "");
-  if (skills.length) lines.push("", "SKILLS AND COMPETENCIES", ...skills.map((item) => `• ${item}`));
+  if (skills.length) lines.push("", "Skills and competencies", ...skills.map((item) => `• ${item}`));
   const experience = toList(extractedDetails.experience);
-  if (experience.length) lines.push("", "EXPERIENCE", ...experience.map((item) => `• ${item}`));
+  if (experience.length) lines.push("", "Experience", ...experience.map((item) => `• ${item}`));
   if (extractedDetails.professionalRegistration) {
-    lines.push("", "PROFESSIONAL REGISTRATION", extractedDetails.professionalRegistration);
+    lines.push("", "Professional registration", extractedDetails.professionalRegistration);
   }
-  if (extractedDetails.driversLicense) lines.push("", "DRIVER'S LICENCE", extractedDetails.driversLicense);
-  if (extractedDetails.contractDuration) lines.push("", "CONTRACT DURATION", extractedDetails.contractDuration);
-  if (extractedDetails.numberOfPosts) lines.push("", "NUMBER OF POSTS", String(extractedDetails.numberOfPosts));
+  if (extractedDetails.driversLicense) lines.push("", "Driver's licence", extractedDetails.driversLicense);
+  if (extractedDetails.contractDuration) lines.push("", "Contract duration", extractedDetails.contractDuration);
+  if (extractedDetails.numberOfPosts) lines.push("", "Number of posts", String(extractedDetails.numberOfPosts));
 
   const applicationDetails = [
     ["Enquiries", vacancy.enquiries],
@@ -620,23 +621,23 @@ function buildDescription(
     ["Application procedure", vacancy.application_procedure],
   ].filter(([, value]) => value);
   if (applicationDetails.length) {
-    lines.push("", "HOW TO APPLY");
-    for (const [label, value] of applicationDetails) lines.push(`• ${label}: ${value}`);
+    lines.push("", "How to apply");
+    for (const [label, value] of applicationDetails) lines.push(`${label}: ${value}`);
   }
   if (extractedDetails.applicationMethods.length) {
-    lines.push(`• Application method: ${extractedDetails.applicationMethods.join(", ")}`);
+    lines.push(`Application method: ${extractedDetails.applicationMethods.join(", ")}`);
   }
   if (extractedDetails.applicationEmails.length) {
-    lines.push(`• Application email: ${extractedDetails.applicationEmails.join(", ")}`);
+    lines.push(`Application email: ${extractedDetails.applicationEmails.join(", ")}`);
   }
   if (extractedDetails.requiredDocuments.length) {
-    lines.push(`• Required documents: ${extractedDetails.requiredDocuments.join(", ")}`);
+    lines.push(`Documents to include: ${extractedDetails.requiredDocuments.join(", ")}`);
   }
   if (extractedDetails.closingTime) {
-    lines.push(`• Application deadline time: ${extractedDetails.closingTime}`);
+    lines.push(`Application deadline time: ${extractedDetails.closingTime}`);
   }
   const notes = toList(vacancy.note);
-  if (notes.length) lines.push("", "NOTE", ...notes.map((item) => `• ${item}`));
+  if (notes.length) lines.push("", "Please note", ...notes.map((item) => `• ${item}`));
   return lines.join("\n");
 }
 

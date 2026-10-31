@@ -184,7 +184,7 @@ export function DpsaCircularDiscovery() {
           reference_number: vacancy.reference_number,
           province: vacancy.province,
           employment_type: vacancy.employment_type,
-          salary_text: vacancy.salary,
+          salary_text: [vacancy.salary, vacancy.stipend].filter(Boolean).join(" "),
           salary_min: vacancy.salary_min,
           salary_max: vacancy.salary_max,
           salary_currency: vacancy.salary_currency,
