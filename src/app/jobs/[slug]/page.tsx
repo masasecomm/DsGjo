@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { ArrowLeft, ArrowUpRight, Banknote, CalendarDays, MapPin, MessageCircle } from "lucide-react";
 import { CommentForm } from "@/components/comment-form";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getApprovedComments, getPublishedJob, isJobOpen } from "@/lib/jobs";
 import type { Job } from "@/lib/jobs";
@@ -466,6 +467,7 @@ export default async function JobPage({
           <CommentForm jobId={job.id} />
         </section>
       </main>
+      <SiteFooter />
     </>
   );
 }

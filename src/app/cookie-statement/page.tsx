@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Cookie, ShieldCheck } from "lucide-react";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { SocialLinks } from "@/components/social-links";
 
 export const metadata: Metadata = {
   title: "Cookie statement",
@@ -98,15 +98,7 @@ export default function CookieStatementPage() {
           </section>
         </div>
       </main>
-      <footer className="site-footer">
-        <Link href="/" className="brand footer-brand"><span className="brand-mark" aria-hidden="true" /><span className="brand-name">DPSA Government Jobs</span></Link>
-        <span>Helping you find your next public service opportunity.</span>
-        <SocialLinks />
-        <Link href="/privacy-policy" className="footer-admin">Privacy policy</Link>
-        <Link href="/contact" className="footer-admin">Contact</Link>
-        <Link href="/terms-and-conditions" className="footer-admin">Terms</Link>
-        <span className="footer-copy">DPSA Jobs</span>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

@@ -44,6 +44,7 @@ create table if not exists public.comments (
 
 create table if not exists public.job_alert_subscribers (
   id uuid primary key default gen_random_uuid(),
+  name text check (name is null or char_length(trim(name)) between 2 and 80),
   email text not null unique check (email = lower(email) and email ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'),
   status text not null default 'active' check (status in ('active', 'unsubscribed')),
   consent_at timestamptz not null default now(),

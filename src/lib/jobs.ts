@@ -38,7 +38,7 @@ export async function getPublishedJobs(limit = 100, search?: string) {
   if (search?.trim()) {
     const term = search.trim().replace(/[^a-z0-9\s-]/gi, " ").replace(/\s+/g, " ").slice(0, 80).trim();
     if (term) {
-      const searchFilters = ["title", "department", "location"].flatMap((column) => [
+      const searchFilters = ["title", "department", "location", "province"].flatMap((column) => [
         `and(closing_date.is.null,${column}.ilike.%${term}%)`,
         `and(closing_date.gte.${today},${column}.ilike.%${term}%)`,
       ]);
@@ -53,6 +53,24 @@ export async function getPublishedJobs(limit = 100, search?: string) {
   const { data, error } = await query;
   if (error) throw new Error(`Could not load vacancies: ${error.message}`);
   return data ?? [];
+}
+
+export async function getPublishedDepartments(limit = 8) {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("department,closing_date")
+    .eq("status", "published")
+    .or(`closing_date.is.null,closing_date.gte.${getSouthAfricanDate()}`)
+    .not("department", "is", null)
+    .order("department")
+    .limit(100);
+
+  if (error) throw new Error(`Could not load vacancy departments: ${error.message}`);
+  return [...new Set((data ?? []).map(({ department }) => department?.trim()).filter((department): department is string => Boolean(department)))]
+    .slice(0, limit);
 }
 
 export async function getPublishedJob(slug: string) {

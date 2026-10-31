@@ -199,7 +199,11 @@ export async function subscribeToAlerts(
   if (!isSupabaseConfigured()) {
     return { message: "Job alerts will be available once the site is connected to its database.", error: true };
   }
+  const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (name.length < 2 || name.length > 80) {
+    return { message: "Enter a name between 2 and 80 characters.", error: true };
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
     return { message: "Enter a valid email address.", error: true };
   }
@@ -209,6 +213,7 @@ export async function subscribeToAlerts(
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("job_alert_subscribers").insert({
+    name,
     email,
     status: "active",
     consent_at: new Date().toISOString(),
@@ -216,6 +221,13 @@ export async function subscribeToAlerts(
 
   if (error?.code === "23505") {
     return { message: "Thanks. If this address was not already registered, it is now on the list." };
+  }
+  if ((error?.code === "42703" || error?.code === "PGRST204") && error.message.toLowerCase().includes("name")) {
+    console.error("Could not save job alert subscription: apply the subscriber-name database migration.", error.code);
+    return {
+      message: "Sign-up is temporarily unavailable while the site database is updated. Please try again later.",
+      error: true,
+    };
   }
   if (error) {
     console.error("Could not save job alert subscription.", error.code);

@@ -170,6 +170,7 @@ export type Database = {
       job_alert_subscribers: {
         Row: {
           id: string;
+          name: string | null;
           email: string;
           status: "active" | "unsubscribed";
           consent_at: string;
@@ -177,6 +178,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
+          name?: string | null;
           email: string;
           status?: "active" | "unsubscribed";
           consent_at?: string;
@@ -184,6 +186,7 @@ export type Database = {
         };
         Update: {
           id?: string;
+          name?: string | null;
           email?: string;
           status?: "active" | "unsubscribed";
           consent_at?: string;

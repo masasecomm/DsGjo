@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { SocialLinks } from "@/components/social-links";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
@@ -66,7 +66,7 @@ export default function PrivacyPolicyPage() {
                 <h2>Information we handle</h2>
                 <h3>Information you choose to provide</h3>
                 <ul>
-                  <li><strong>Job alerts:</strong> your email address and the time you consented to be added to the alerts list. Email notifications are not yet enabled.</li>
+                  <li><strong>Job alerts:</strong> your name, email address and the time you consented to be added to the alerts list. Email notifications are not yet enabled.</li>
                   <li><strong>Comments:</strong> the name and comment you submit on a vacancy. Comments are reviewed and are shown publicly only after approval. Please do not include sensitive personal information.</li>
                   <li><strong>Administrator access:</strong> administrator account information is used to sign in and manage the website; visitors do not need an account to browse vacancies.</li>
                 </ul>
@@ -143,15 +143,7 @@ export default function PrivacyPolicyPage() {
           </article>
         </div>
       </main>
-      <footer className="site-footer">
-        <Link href="/" className="brand footer-brand"><span className="brand-mark" aria-hidden="true" /><span className="brand-name">DPSA Government Jobs</span></Link>
-        <span>Helping you find your next public service opportunity.</span>
-        <SocialLinks />
-        <Link href="/privacy-policy" className="footer-admin">Privacy policy</Link>
-        <Link href="/contact" className="footer-admin">Contact</Link>
-        <Link href="/terms-and-conditions" className="footer-admin">Terms</Link>
-        <span className="footer-copy">DPSA Jobs</span>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

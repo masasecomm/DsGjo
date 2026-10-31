@@ -15,9 +15,8 @@ import {
   UsersRound,
 } from "lucide-react";
 import { connection } from "next/server";
-import { SubscribeForm } from "@/components/subscribe-form";
 import { SiteHeader } from "@/components/site-header";
-import { SocialLinks } from "@/components/social-links";
+import { SiteFooter } from "@/components/site-footer";
 import { getPublishedJobs } from "@/lib/jobs";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -177,36 +176,8 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="home-alert" id="job-alerts">
-          <div className="home-alert-inner">
-            <div className="home-alert-copy">
-              <span className="home-kicker">VACANCY UPDATES</span>
-              <h2>Keep new opportunities<br />within reach.</h2>
-              <p>Sign up to be included on the list for future vacancy updates.</p>
-            </div>
-            <div className="home-alert-form">
-              <SubscribeForm />
-              <span className="home-alert-privacy"><ShieldCheck size={14} /> Your email is visible only to site administrators.</span>
-            </div>
-          </div>
-        </section>
       </main>
-      <footer className="home-footer">
-        <div className="home-footer-main">
-          <div className="home-footer-brand">
-            <Link href="/" className="home-footer-logo" aria-label="DPSA Government Jobs home">
-              <Image src="/south-african-flag.png" alt="" width={560} height={560} />
-              <span>DPSA Government Jobs</span>
-            </Link>
-            <p>Helping South Africans discover meaningful public service careers.</p>
-            <SocialLinks className="home-social-links" />
-          </div>
-          <div className="home-footer-column"><strong>Explore</strong><Link href="/jobs">Find vacancies</Link><Link href="/#sectors">Browse by field</Link><Link href="/#job-alerts">Job alerts</Link></div>
-          <div className="home-footer-column"><strong>For applicants</strong><Link href="/jobs">Search opportunities</Link><Link href="/privacy-policy">Privacy policy</Link><Link href="/cookie-statement">Cookie statement</Link><Link href="/terms-and-conditions">Terms and conditions</Link></div>
-          <div className="home-footer-column"><strong>Site</strong><Link href="/about">About us</Link><Link href="/contact">Contact</Link><Link href="/admin/login">Admin sign in</Link><Link href="/sitemap.xml">Sitemap</Link></div>
-        </div>
-        <div className="home-footer-bottom"><span>© {new Date().getFullYear()} DPSA Government Jobs</span><span>Public service opportunities, all in one place.</span></div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

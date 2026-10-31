@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
-import { Cardo, Inter } from "next/font/google";
+import { Jost } from "next/font/google";
 import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
-const inter = Inter({
+const jost = Jost({
   subsets: ["latin"],
-  weight: ["400", "600"],
-  variable: "--font-home-inter",
-});
-
-const cardo = Cardo({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-home-cardo",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-jost",
 });
 
 export const metadata: Metadata = {
@@ -29,5 +23,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
-  return <html lang="en" className={`${inter.variable} ${cardo.variable}`}><body>{children}</body></html>;
+  return <html lang="en" className={jost.variable}><body>{children}</body></html>;
 }

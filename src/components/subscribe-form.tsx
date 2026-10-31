@@ -11,10 +11,11 @@ export function SubscribeForm() {
   return (
     <form action={action}>
       <div className="subscribe-form">
-        <input aria-label="Email address" autoComplete="email" name="email" placeholder="Your email address" required type="email" />
-        <button disabled={pending} type="submit">{pending ? "Joining..." : "Get job alerts"}</button>
+        <input aria-label="Your name" autoComplete="name" maxLength={80} minLength={2} name="name" placeholder="Your name" required type="text" />
+        <input aria-label="Email address" autoComplete="email" maxLength={254} name="email" placeholder="Your email" required type="email" />
+        <button disabled={pending} type="submit">{pending ? "Please wait..." : "Notify Me"}</button>
       </div>
-      <label className="consent-check"><input name="consent" required type="checkbox" />I agree to the <a href="/privacy-policy">privacy policy</a> and to my email being stored for vacancy updates.</label>
+      <label className="consent-check"><input name="consent" required type="checkbox" />I agree to the <a href="/privacy-policy">privacy policy</a> and to my name and email being stored for vacancy updates.</label>
       <p className={`form-message${state.error ? " error" : ""}`} aria-live="polite">{state.message}</p>
     </form>
   );
