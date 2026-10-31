@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { connection } from "next/server";
 import { ArrowLeft, ArrowUpRight, Banknote, CalendarDays, MapPin, MessageCircle } from "lucide-react";
 import { CommentForm } from "@/components/comment-form";
@@ -166,10 +166,11 @@ function CopySectionView({ title, children }: { title: string; children: ReactNo
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const job = await getPublishedJob(slug);
+  const requestedSlug = slug[0] === "jobs" ? slug.slice(1).join("/") : slug.join("/");
+  const job = await getPublishedJob(requestedSlug);
   if (!job) return { title: "Vacancy not found" };
   const isOpen = isJobOpen(job);
   const sections = getDescriptionSections(job.description);
@@ -187,7 +188,7 @@ export async function generateMetadata({
     title: `${cleanCopy(job.title)}${job.department ? ` – ${cleanCopy(job.department)}` : ""}`,
     description,
     alternates: {
-      canonical: `/jobs/${job.slug}`,
+      canonical: `/${job.slug}`,
     },
     ...(isCircularJob(job) && {
       openGraph: {
@@ -210,12 +211,17 @@ export async function generateMetadata({
 export default async function JobPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string[] }>;
 }) {
   await connection();
   const { slug } = await params;
-  const job = await getPublishedJob(slug);
+  const isLegacyJobsPath = slug[0] === "jobs";
+  const requestedSlug = isLegacyJobsPath ? slug.slice(1).join("/") : slug.join("/");
+  const job = await getPublishedJob(requestedSlug);
   if (!job) notFound();
+  if (isLegacyJobsPath || job.slug !== requestedSlug) {
+    permanentRedirect(`/${job.slug}`);
+  }
 
   const comments = await getApprovedComments(job.id);
   const isOpen = isJobOpen(job);

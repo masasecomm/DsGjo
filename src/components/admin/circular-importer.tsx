@@ -43,6 +43,7 @@ export function CircularImporter() {
   const hasOversizedDescription = rows.some((row) => row.included && row.description.length > 20_000);
   const jobsToSave = rows.filter((row) => row.included).map((row) => ({
     title: row.title,
+    reference_number: row.reference_number,
     department: row.department,
     location: row.location,
     closing_date: row.closing_date,

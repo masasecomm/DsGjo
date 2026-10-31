@@ -9,6 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   buildDpsaCircularPdfUrl,
 } from "@/lib/dpsa-circular-discovery";
+import { getJobSlug } from "@/lib/job-slugs";
 
 export type FormState = { message: string; error?: boolean };
 
@@ -165,11 +166,9 @@ function validateImportedJobs(rawJobs: FormDataEntryValue | null) {
     }
     const validatedStatus = status === "published" ? "published" : "draft";
 
-    const slugBase = title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100);
     return {
       title,
-      slug: `${slugBase}-${crypto.randomUUID().slice(0, 8)}`,
+      slug: getJobSlug(title, description, referenceNumber),
       department: department || null,
       location: location || null,
       closing_date: closingDate || null,
@@ -321,15 +320,15 @@ export async function createJob(formData: FormData) {
   if (closingDate && !/^\d{4}-\d{2}-\d{2}$/.test(closingDate)) throw new Error("Invalid closing date.");
   if (applicationUrl && !/^https:\/\//i.test(applicationUrl)) throw new Error("Application links must use HTTPS.");
 
-  const slugBase = title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100);
-  const slug = `${slugBase}-${crypto.randomUUID().slice(0, 8)}`;
+  const referenceNumber = description.match(/\b(?:reference(?:\s+number)?|ref\.?(?:\s*(?:no\.?|number))?)\s*[:.\u2013\u2014-]\s*([^\r\n•]+)/i)?.[1]?.trim() || null;
+  const slug = getJobSlug(title, description, referenceNumber);
   const { error } = await supabase.from("jobs").insert({
     title,
     slug,
     department: department || null,
     location: location || null,
     closing_date: closingDate || null,
+    reference_number: referenceNumber,
     description,
     application_url: applicationUrl || null,
     status,

@@ -24,6 +24,14 @@ const southAfricanProvinces = [
   "Western Cape",
 ];
 
+const searchConsolePopularSearches = [
+  "DPSA vacancies 2026",
+  "DPSA",
+  "DPSA circular",
+  "DPSA circular 2026",
+  "Government vacancies",
+];
+
 function getSouthAfricanDate() {
   const parts = new Intl.DateTimeFormat("en-ZA", {
     timeZone: "Africa/Johannesburg",
@@ -137,7 +145,9 @@ export async function getLatestPublishedCircular(): Promise<PublishedCircular | 
 }
 
 export async function getPopularJobSearches(limit = 6) {
-  if (!isSupabaseConfigured()) return [];
+  const fallbackSearches = () =>
+    searchConsolePopularSearches.slice(0, limit).map((search_term) => ({ search_term }));
+  if (!isSupabaseConfigured()) return fallbackSearches();
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("get_popular_job_searches", {
@@ -145,9 +155,9 @@ export async function getPopularJobSearches(limit = 6) {
   });
   if (error) {
     console.error("Could not load popular job searches. Apply the job search analytics migration to enable this feature.", error.message);
-    return [];
+    return fallbackSearches();
   }
-  return data ?? [];
+  return data?.length ? data : fallbackSearches();
 }
 
 export async function recordPopularJobSearch(searchTerm: string) {
@@ -213,7 +223,17 @@ export async function getPublishedJob(slug: string) {
     .maybeSingle();
 
   if (error) throw new Error(`Could not load vacancy: ${error.message}`);
-  return data;
+  if (data) return data;
+
+  const { data: legacyJob, error: legacyError } = await supabase
+    .from("jobs")
+    .select("*")
+    .contains("legacy_slugs", [slug])
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (legacyError) throw new Error(`Could not load legacy vacancy URL: ${legacyError.message}`);
+  return legacyJob;
 }
 
 export async function getApprovedComments(jobId: string) {

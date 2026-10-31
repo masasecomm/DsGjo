@@ -32,7 +32,7 @@ export function VacancyCard({ job }: { job: VacancyCardJob }) {
       )}
       <div className="vacancy-card-content">
         <div className="vacancy-card-title">
-          <h3><Link href={`/jobs/${job.slug}`}>{job.title}</Link></h3>
+          <h3><Link href={`/${job.slug}`}>{job.title}</Link></h3>
           <span className="vacancy-card-status">Open</span>
         </div>
         <div className="vacancy-card-meta">

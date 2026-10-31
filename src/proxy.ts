@@ -3,6 +3,19 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseConfig, isSupabaseConfigured } from "@/lib/supabase/config";
 
 export async function proxy(request: NextRequest) {
+  const legacyCircularMatch = request.nextUrl.pathname.match(
+    /^\/(?:category\/)?[a-z0-9-]*dpsa-circular-(\d{1,3})-of-(20\d{2})(?:-[a-z0-9-]+)?\/?$/i,
+  );
+  if (legacyCircularMatch) {
+    const number = Number(legacyCircularMatch[1]);
+    if (number >= 1 && number <= 100) {
+      const destination = request.nextUrl.clone();
+      destination.pathname = "/jobs";
+      destination.searchParams.set("q", `DPSA CIRCULAR ${number} of ${legacyCircularMatch[2]}`);
+      return NextResponse.redirect(destination, 308);
+    }
+  }
+
   if (!isSupabaseConfigured()) return NextResponse.next({ request });
 
   const { url, key } = getSupabaseConfig();

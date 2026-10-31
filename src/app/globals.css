@@ -710,11 +710,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .home-hero h1 { font-size: clamp(38px, 10vw, 54px); }
   .home-hero-copy > p { font-size: 12px; }
   .home-search { min-height: 0; flex-direction: column; align-items: stretch; padding: 8px; border-radius: 20px; }
-  .home-search-field { width: 100%; height: 52px; flex: 0 0 auto; gap: 11px; padding: 0 12px; }
+  .home-search-field { width: 100%; height: 56px; flex: 0 0 auto; gap: 11px; padding: 0 16px; }
   .home-search-field + .home-search-field { border-top: 1px solid #e8ebef; border-left: 0; }
-  .home-search input, .home-search select { font-size: 13px; }
+  .home-search input, .home-search select { font-size: 16px; }
+  .home-search select { padding: 0 8px; line-height: 1.4; }
   .home-search button { width: 100%; min-width: 0; min-height: 54px; margin-top: 6px; border-radius: 14px; font-size: 14px; }
   .home-popular-searches { gap: 8px 11px; margin-top: 20px; font-size: 12px; }
+  .home-popular-searches a { display: inline-flex; min-height: 44px; align-items: center; padding: 0 12px; border: 1px solid rgba(255,255,255,.3); border-radius: 999px; background: rgba(255,255,255,.1); text-decoration: none; }
   .home-section { padding: 54px 20px; }
   .home-section-heading { align-items: flex-start; flex-direction: column; gap: 13px; }
   .home-section-heading h2, .home-guidance h2 { font-size: 31px; }
@@ -771,7 +773,7 @@ body :is(
   .home-brand-title { font-size: 14px; }
   .home-brand-subtitle { font-size: 8px; }
   .main-nav, .home-page .main-nav { gap: 6px; font-size: 9px; }
-  .home-search-field { padding-right: 9px; padding-left: 9px; }
+  .home-search-field { padding-right: 12px; padding-left: 12px; }
   .home-search-field > svg { width: 18px; height: 18px; }
   .home-search button { gap: 7px; font-size: 12px; }
   .home-sector-grid { grid-template-columns: 1fr; }

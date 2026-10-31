@@ -22,7 +22,7 @@ The homepage and visual layout can be previewed without Supabase. Vacancy publis
 ## Supabase setup
 
 1. Create a Supabase project.
-2. Open **SQL Editor**, run [`supabase/schema.sql`](./supabase/schema.sql), then wait for it to finish. If this project already has the earlier schema, run [`supabase/migrations/20261030_add_imported_dpsa_circulars.sql`](./supabase/migrations/20261030_add_imported_dpsa_circulars.sql) if circular tracking is not installed yet, followed by [`supabase/migrations/20261030_add_structured_dpsa_job_details.sql`](./supabase/migrations/20261030_add_structured_dpsa_job_details.sql) to add structured vacancy data and support larger circular imports. To enable actual popular-search counts and the admin search/page-view reports, run [`supabase/migrations/20261031_add_job_search_analytics.sql`](./supabase/migrations/20261031_add_job_search_analytics.sql) followed by [`supabase/migrations/20261031_add_page_view_analytics.sql`](./supabase/migrations/20261031_add_page_view_analytics.sql).
+2. Open **SQL Editor**, run [`supabase/schema.sql`](./supabase/schema.sql), then wait for it to finish. If this project already has the earlier schema, run [`supabase/migrations/20261030_add_imported_dpsa_circulars.sql`](./supabase/migrations/20261030_add_imported_dpsa_circulars.sql) if circular tracking is not installed yet, followed by [`supabase/migrations/20261030_add_structured_dpsa_job_details.sql`](./supabase/migrations/20261030_add_structured_dpsa_job_details.sql) to add structured vacancy data and support larger circular imports. Run [`supabase/migrations/20261031_add_circular_job_urls.sql`](./supabase/migrations/20261031_add_circular_job_urls.sql) to move vacancy URLs under their circular, keep old URLs as redirects, and apply the same naming rule to future imports. Run [`supabase/migrations/20261031_track_root_job_urls.sql`](./supabase/migrations/20261031_track_root_job_urls.sql) to keep analytics working with the shorter root-level post URLs. To enable actual popular-search counts and the admin search/page-view reports, run [`supabase/migrations/20261031_add_job_search_analytics.sql`](./supabase/migrations/20261031_add_job_search_analytics.sql) followed by [`supabase/migrations/20261031_add_page_view_analytics.sql`](./supabase/migrations/20261031_add_page_view_analytics.sql).
 3. In **Authentication → Users**, create your administrator account.
 4. In SQL Editor, promote that account (replace the address):
 
@@ -43,6 +43,7 @@ The schema enables row-level security. Public visitors can read published vacanc
 
 - Mobile-friendly homepage and vacancy search.
 - Vacancy detail pages with moderated comments.
+- Circular-based vacancy URLs with reference-number slugs, unique fallbacks, and redirects from prior vacancy URLs.
 - Job-alert email capture and a private subscriber list.
 - Admin sign-in, vacancy creation and publishing, comment moderation, and a dashboard.
 - Admin circular discovery: checks the official DPSA vacancy-circular listing, shows up to five newest circulars not yet imported with their posting dates, and parses PDFs into a spreadsheet-style table. One **Publish all** action publishes every parsed vacancy in that circular (up to 1,000).
@@ -55,6 +56,8 @@ PDF text is extracted in the admin’s browser; files are not stored. Scanned/im
 ## Before moving the existing site/domain
 
 The current site uses WordPress URLs and a large sitemap. This project starts with a new database and does not import WordPress posts or preserve existing URL paths automatically. Before pointing the live domain here, import the existing jobs/content, preserve their URL slugs where possible, and set up and test permanent redirects for any paths that change. Otherwise, existing search rankings and backlinks may be lost.
+
+The app redirects legacy DPSA circular category URLs containing a `dpsa-circular-N-of-YYYY` slug to the matching vacancy search. Old vacancy detail URLs under `/jobs/` redirect to their canonical root-level URL, such as `/dpsa-circular-39-of-2026/deputy-director-warehouse-management-ref-123/`. These redirects only take effect after the domain points to this Vercel project. The homepage uses Google Search Console query data from November 2025–October 2026 as a fallback until new on-site search analytics are available.
 
 ## Validation
 

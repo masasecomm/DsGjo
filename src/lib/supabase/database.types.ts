@@ -35,6 +35,7 @@ export type Database = {
           id: string;
           title: string;
           slug: string;
+          legacy_slugs: string[];
           department: string | null;
           location: string | null;
           closing_date: string | null;
@@ -60,6 +61,7 @@ export type Database = {
           id?: string;
           title: string;
           slug: string;
+          legacy_slugs?: string[];
           department?: string | null;
           location?: string | null;
           closing_date?: string | null;
@@ -85,6 +87,7 @@ export type Database = {
           id?: string;
           title?: string;
           slug?: string;
+          legacy_slugs?: string[];
           department?: string | null;
           location?: string | null;
           closing_date?: string | null;
