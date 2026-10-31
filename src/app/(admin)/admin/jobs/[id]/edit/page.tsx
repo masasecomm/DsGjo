@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { updateJob } from "@/app/actions";
 import { requireAdmin } from "@/lib/admin";
 
-export default async function EditJobPage({
+async function EditJobContent({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await connection();
   const supabase = await requireAdmin();
   const { data: job, error } = await supabase
     .from("jobs")
@@ -36,5 +39,17 @@ export default async function EditJobPage({
         </form>
       </section>
     </>
+  );
+}
+
+export default function EditJobPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <Suspense fallback={<p className="admin-empty">Loading vacancy...</p>}>
+      <EditJobContent params={params} />
+    </Suspense>
   );
 }

@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 
-export default async function AdminDashboard() {
+async function AdminDashboardContent() {
+  await connection();
   const supabase = await requireAdmin();
   const [jobs, comments, subscribers] = await Promise.all([
     supabase.from("jobs").select("id,title,slug,status,created_at", { count: "exact" }).order("created_at", { ascending: false }).limit(6),
@@ -34,5 +37,13 @@ export default async function AdminDashboard() {
         </section>
       </div>
     </>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <Suspense fallback={<p className="admin-empty">Loading dashboard...</p>}>
+      <AdminDashboardContent />
+    </Suspense>
   );
 }

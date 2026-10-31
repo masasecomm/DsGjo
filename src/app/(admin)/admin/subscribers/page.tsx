@@ -1,7 +1,10 @@
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { updateSubscriberStatus } from "@/app/actions";
 
-export default async function AdminSubscribersPage() {
+async function AdminSubscribersContent() {
+  await connection();
   const supabase = await requireAdmin();
   const { data, error, count } = await supabase
     .from("job_alert_subscribers")
@@ -19,5 +22,13 @@ export default async function AdminSubscribersPage() {
       </section>
       <div className="admin-banner">Email addresses are private and visible only to admins. Automated delivery is not configured yet; connect a mail provider before promising email alerts.</div>
     </>
+  );
+}
+
+export default function AdminSubscribersPage() {
+  return (
+    <Suspense fallback={<p className="admin-empty">Loading subscribers...</p>}>
+      <AdminSubscribersContent />
+    </Suspense>
   );
 }

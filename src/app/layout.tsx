@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
+import { Cardo, Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-home-inter",
+});
+
+const cardo = Cardo({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-home-cardo",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -11,5 +24,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en" className={`${inter.variable} ${cardo.variable}`}><body>{children}</body></html>;
 }

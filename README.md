@@ -22,7 +22,7 @@ The homepage and visual layout can be previewed without Supabase. Vacancy publis
 ## Supabase setup
 
 1. Create a Supabase project.
-2. Open **SQL Editor**, run [`supabase/schema.sql`](./supabase/schema.sql), then wait for it to finish.
+2. Open **SQL Editor**, run [`supabase/schema.sql`](./supabase/schema.sql), then wait for it to finish. If this project already has the earlier schema, run [`supabase/migrations/20261030_add_imported_dpsa_circulars.sql`](./supabase/migrations/20261030_add_imported_dpsa_circulars.sql) if circular tracking is not installed yet, followed by [`supabase/migrations/20261030_add_structured_dpsa_job_details.sql`](./supabase/migrations/20261030_add_structured_dpsa_job_details.sql) to add structured vacancy data and support larger circular imports.
 3. In **Authentication → Users**, create your administrator account.
 4. In SQL Editor, promote that account (replace the address):
 
@@ -43,7 +43,10 @@ The schema enables row-level security. Public visitors can read published vacanc
 - Vacancy detail pages with moderated comments.
 - Job-alert email capture and a private subscriber list.
 - Admin sign-in, vacancy creation and publishing, comment moderation, and a dashboard.
+- Admin circular discovery: checks the official DPSA vacancy-circular listing, shows up to five newest circulars not yet imported with their posting dates, and parses PDFs into a spreadsheet-style table. One **Publish all** action publishes every parsed vacancy in that circular (up to 1,000).
 - Sitemap and robots metadata for search engines.
+
+PDF text is extracted in the admin’s browser; files are not stored. Scanned/image-only PDFs need OCR and are not supported. Parsed records store explicit reference, province, employment type, salary, level, source, and structured application/qualification details; unknown employment types stay unset rather than defaulting to permanent. After an admin selects **Publish all**, circular tracking and all published vacancy records are saved together in one Supabase transaction to prevent duplicate imports.
 
 **Email delivery is not configured yet.** The current alert form stores consented email signups, but a mail provider and a sending workflow must be connected before the site can send vacancy notifications. The privacy policy is a draft and must be completed with the site owner’s contact details. Public forms also need rate limiting and bot protection before production.
 

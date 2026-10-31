@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { connection } from "next/server";
 import { signOut } from "@/app/actions";
 import { AdminSidebar } from "@/components/admin-sidebar";
@@ -6,7 +7,7 @@ import { requireAdmin } from "@/lib/admin";
 
 export const instant = false;
 
-export default async function AdminLayout({
+async function AdminLayoutContent({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   await connection();
@@ -23,5 +24,15 @@ export default async function AdminLayout({
         <main className="admin-main">{children}</main>
       </div>
     </div>
+  );
+}
+
+export default function AdminLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <Suspense fallback={<div className="admin-wrap"><p className="admin-empty">Loading admin...</p></div>}>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </Suspense>
   );
 }
