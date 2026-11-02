@@ -701,8 +701,8 @@ export function parseDpsaCircularText(text: string, metadata: DpsaCircularMetada
     let department = pageContext.department || nationalDepartment;
     if (department && !/^(?:Department|Office)\s+of\b/i.test(department)) {
       department = `Department of ${department}`;
-    if (department.length > 180) department = "";
     }
+    if (department.length > 180) department = "";
 
     const salary = fields.salary ?? "";
     const stipend = fields.stipend ?? "";
