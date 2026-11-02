@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { House, Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronDown, House, Menu, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { PublishedCircular } from "@/lib/jobs";
 
 function isPublishedCircular(value: unknown): value is PublishedCircular {
@@ -15,6 +15,7 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [circulars, setCirculars] = useState<PublishedCircular[]>([]);
+  const circularMenuRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
     const updateScrollState = () => setScrolled(window.scrollY > 24);
@@ -53,6 +54,16 @@ export function SiteHeader() {
     };
   }, []);
 
+  useEffect(() => {
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (event.target instanceof Node && !circularMenuRef.current?.contains(event.target)) {
+        if (circularMenuRef.current) circularMenuRef.current.open = false;
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
+  }, []);
+
   return (
     <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
       <Link href="/" className="brand home-brand" aria-label="DPSA Government Jobs home">
@@ -75,8 +86,8 @@ export function SiteHeader() {
       <nav id="main-navigation" className={`main-nav${menuOpen ? " is-open" : ""}`} aria-label="Main navigation">
         <Link href="/" className="nav-home" onClick={() => setMenuOpen(false)}><House size={16} aria-hidden="true" />Home</Link>
         {circulars.length > 0 && (
-          <details className="main-nav-circulars">
-            <summary>Circulars</summary>
+          <details className="main-nav-circulars" ref={circularMenuRef}>
+            <summary>Circulars <ChevronDown size={14} aria-hidden="true" /></summary>
             <div className="main-nav-circular-list">
               {circulars.map((circular) => (
                 <Link

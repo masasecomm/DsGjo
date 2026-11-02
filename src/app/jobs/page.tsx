@@ -82,7 +82,7 @@ export default async function JobsPage({
             {result.total > 0 ? ` · Page ${currentPage} of ${pageCount}` : ""}
           </p>
           {jobs.length ? <div className="list-grid">{jobs.map((job) => (
-            <VacancyCard job={job} key={job.id} />
+            <VacancyCard job={job} key={job.id} query={q} />
           ))}</div> : <div className="empty-jobs"><h3>{hasFilters ? "No matching vacancies" : "No vacancies published yet"}</h3><p>{hasFilters ? "Try changing your search terms or filters." : "Check back soon for new public service opportunities."}</p><Link href="/#job-alerts" className="text-link">Get job alerts <span aria-hidden="true">→</span></Link></div>}
           <JobPagination
             page={currentPage}

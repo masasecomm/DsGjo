@@ -32,8 +32,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .main-nav .nav-home { display: inline-flex; align-items: center; gap: 5px; }
 .main-nav a:hover, .footer-admin:hover { color: #ffc43c; }
 .main-nav-circulars { position: relative; }
-.main-nav-circulars summary { cursor: pointer; list-style: none; }
+.main-nav-circulars summary { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; list-style: none; }
 .main-nav-circulars summary::-webkit-details-marker { display: none; }
+.main-nav-circulars[open] summary svg { transform: rotate(180deg); }
 .main-nav-circular-list { position: absolute; top: calc(100% + 15px); left: -14px; display: grid; width: max-content; min-width: 230px; max-height: min(65vh, 430px); gap: 2px; overflow-y: auto; padding: 8px; border: 1px solid rgba(23,35,31,.1); border-radius: 9px; color: var(--ink); background: #fff; box-shadow: 0 12px 32px rgba(20,35,30,.18); }
 .main-nav-circular-list a { padding: 10px 12px; border-radius: 6px; font-size: 12px; }
 .main-nav-circular-list a:hover { color: var(--green); background: #f1f5f2; }
@@ -223,6 +224,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .detail-wrap { max-width: 850px; margin: auto; padding: 42px 24px 80px; }.back-link { display: inline-flex; align-items: center; gap: 7px; color: var(--green); font-size: 12px; font-weight: 700; }.detail-card { margin-top: 23px; padding: 30px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }.detail-card h1 { font: 400 clamp(32px, 5vw, 48px)/1.07 var(--font-jost), Arial, Helvetica, sans-serif; margin: 13px 0 14px; }
 .vacancy-salary { display: flex; align-items: center; gap: 13px; width: fit-content; max-width: 100%; padding: 13px 17px; margin: 0 0 19px; border: 1px solid #dfe8d8; border-radius: 8px; color: var(--green); background: #f3f6ed; }.vacancy-salary > svg { flex: 0 0 auto; }.vacancy-salary div { display: grid; gap: 3px; }.vacancy-salary span { color: #68776e; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }.vacancy-salary strong { color: #203d30; font-size: 14px; line-height: 1.45; }
 .vacancy-introduction { margin: 0 0 18px; color: #354a3e; font-size: 15px; line-height: 1.75; }
+.job-meta { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 18px; color: #69766d; font-size: 12px; }
+.job-meta > span { display: inline-flex; min-width: 0; align-items: flex-start; gap: 6px; }
+.job-meta svg { flex: 0 0 auto; margin-top: 2px; }
+.search-highlight { padding: 0 .04em; border-radius: 2px; color: inherit; background: rgba(56, 189, 248, .3); }
 .vacancy-source { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 18px 0 0; color: #69766d; font-size: 11px; }.vacancy-source a { display: inline-flex; align-items: center; gap: 4px; color: var(--green); font-weight: 700; }.vacancy-source a:hover { text-decoration: underline; text-underline-offset: 3px; }.vacancy-source > span { color: #7a867d; }
 .vacancy-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; margin: 23px 0 0; border: 1px solid var(--line); border-radius: 8px; background: var(--line); }.vacancy-facts > div { min-width: 0; padding: 13px 15px; background: #fbfcf9; }.vacancy-facts dt { margin-bottom: 5px; color: #77847b; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }.vacancy-facts dd { margin: 0; color: #243a2e; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .vacancy-copy { margin-top: 28px; }.vacancy-copy-section { padding: 21px 0; border-top: 1px solid #edf0e9; }.vacancy-copy-section h2 { margin: 0 0 11px; color: #20382c; font: 400 22px/1.2 Georgia,serif; }.vacancy-copy-section p, .vacancy-copy-section li { color: #4c5c52; font-size: 13px; line-height: 1.75; }.vacancy-copy-section p { margin: 0; white-space: pre-line; }.vacancy-copy-section ul { display: grid; gap: 8px; margin: 0; padding-left: 20px; }.vacancy-copy-section li { padding-left: 3px; }.vacancy-copy-section li::marker { color: #73906b; }.vacancy-copy-section a { color: var(--green); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
@@ -547,10 +552,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .home-search-field + .home-search-field { border-left: 1px solid #e8ebef; }
 .home-search-keywords { flex: 1.45; }
 .home-search-field > svg { flex: 0 0 auto; }
+.home-search-select { position: relative; display: block; min-width: 0; height: 100%; flex: 1; }
 .home-search input, .home-search select { width: 100%; min-width: 0; height: 100%; border: 0; outline: 0; color: #737b83; background: transparent; font-size: 15px; }
 .home-search input::placeholder { color: #858b92; opacity: 1; }
-.home-search select { appearance: none; cursor: pointer; }
-.home-search select { padding: 0 5px; }
+.home-search-select select { appearance: none; cursor: pointer; padding: 0 24px 0 5px; }
+.home-search-select > svg { position: absolute; top: 50%; right: 2px; pointer-events: none; transform: translateY(-50%); }
 .home-search select option { padding: 8px 12px; }
 .home-search select:invalid { color: #858b92; }
 .home-search button, .home-primary-link {
@@ -723,7 +729,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .home-page .main-nav.is-open { border-color: rgba(255,255,255,.18); color: #fff; background: #17499e; }
   .main-nav a, .home-page .main-nav a { min-height: 46px; display: flex; align-items: center; gap: 9px; padding: 0 13px; border-radius: 9px; }
   .main-nav-circulars { width: 100%; }
-  .main-nav-circulars summary { display: flex; min-height: 46px; align-items: center; padding: 0 13px; border-radius: 9px; }
+  .main-nav-circulars summary { display: flex; min-height: 46px; align-items: center; justify-content: space-between; padding: 0 13px; border-radius: 9px; }
   .main-nav-circular-list { position: static; width: 100%; max-height: 260px; gap: 0; padding: 4px 6px 7px 14px; border: 0; border-radius: 0; color: inherit; background: transparent; box-shadow: none; }
   .main-nav-circular-list a, .main-nav.is-open .main-nav-circular-list a { min-height: 38px; padding: 8px 10px; font-size: 12px; }
   .main-nav.is-open .main-nav-circular-list a:hover { color: var(--green); background: #f1f5f2; }
