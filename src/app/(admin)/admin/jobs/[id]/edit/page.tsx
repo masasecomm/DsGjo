@@ -29,7 +29,7 @@ async function EditJobContent({
       <section className="admin-panel">
         <form action={updateJob} className="site-form">
           <input name="id" type="hidden" value={job.id} />
-          <label>Job title<input maxLength={180} name="title" required defaultValue={job.title} /></label>
+          <label>Job title<input maxLength={250} name="title" required defaultValue={job.title} /></label>
           <label>Department<input name="department" defaultValue={job.department ?? ""} /></label>
           <label>Location<input name="location" defaultValue={job.location ?? ""} /></label>
           <label>Closing date<input name="closing_date" type="date" defaultValue={job.closing_date ?? ""} /></label>

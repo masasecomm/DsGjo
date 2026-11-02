@@ -9,7 +9,7 @@ create table if not exists public.profiles (
 
 create table if not exists public.jobs (
   id uuid primary key default gen_random_uuid(),
-  title text not null check (char_length(title) between 5 and 180),
+  title text not null check (char_length(title) between 5 and 250),
   slug text not null unique,
   legacy_slugs text[] not null default '{}',
   department text,

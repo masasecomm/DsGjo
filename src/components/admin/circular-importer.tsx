@@ -160,7 +160,7 @@ export function CircularImporter() {
                 </legend>
                 <p className="circular-source">From {row.source}</p>
                 <div className="circular-fields">
-                  <label>Job title<input maxLength={180} onChange={(event) => updateRow(index, { title: event.target.value })} required={row.included} value={row.title} /></label>
+                  <label>Job title<input maxLength={250} onChange={(event) => updateRow(index, { title: event.target.value })} required={row.included} value={row.title} /></label>
                   <label>Department<input maxLength={180} onChange={(event) => updateRow(index, { department: event.target.value })} value={row.department} /></label>
                   <label>Location<input maxLength={180} onChange={(event) => updateRow(index, { location: event.target.value })} value={row.location} /></label>
                   <label>Closing date<input onChange={(event) => updateRow(index, { closing_date: event.target.value })} type="date" value={row.closing_date} /></label>

@@ -120,8 +120,8 @@ function validateImportedJobs(rawJobs: FormDataEntryValue | null) {
       salaryBasis: detailsText("salaryBasis", 100),
     };
 
-    if (title.length < 5 || title.length > 180) {
-      throw new Error(`Vacancy ${index + 1} needs a title between 5 and 180 characters.`);
+    if (title.length < 5 || title.length > 250) {
+      throw new Error(`Vacancy ${index + 1} needs a title between 5 and 250 characters.`);
     }
     if (department.length > 180 || location.length > 180 || province.length > 100 || referenceNumber.length > 250 || postNumber.length > 40 || jobLevel.length > 50) {
       throw new Error(`Vacancy ${index + 1} has a department or location longer than 180 characters.`);
@@ -310,8 +310,8 @@ export async function createJob(formData: FormData) {
   const applicationUrl = String(formData.get("application_url") ?? "").trim();
   const status = String(formData.get("status") ?? "draft");
 
-  if (title.length < 5 || title.length > 180 || description.length < 20) {
-    throw new Error("Provide a job title (5–180 characters) and a description of at least 20 characters.");
+  if (title.length < 5 || title.length > 250 || description.length < 20) {
+    throw new Error("Provide a job title (5–250 characters) and a description of at least 20 characters.");
   }
   if (status !== "draft" && status !== "published") throw new Error("Invalid job status.");
   if (closingDate && !/^\d{4}-\d{2}-\d{2}$/.test(closingDate)) throw new Error("Invalid closing date.");
@@ -396,8 +396,8 @@ export async function updateJob(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
   const applicationUrl = String(formData.get("application_url") ?? "").trim();
 
-  if (!id || title.length < 5 || title.length > 180 || description.length < 20) {
-    throw new Error("Provide a job title (5–180 characters) and a description of at least 20 characters.");
+  if (!id || title.length < 5 || title.length > 250 || description.length < 20) {
+    throw new Error("Provide a job title (5–250 characters) and a description of at least 20 characters.");
   }
   if (closingDate && !/^\d{4}-\d{2}-\d{2}$/.test(closingDate)) throw new Error("Invalid closing date.");
   if (applicationUrl && !/^https:\/\//i.test(applicationUrl)) throw new Error("Application links must use HTTPS.");
