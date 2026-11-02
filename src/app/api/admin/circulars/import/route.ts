@@ -114,7 +114,7 @@ function validateCircularJobs(
 
   return value.map((item, index) => {
     if (!isRecord(item)) throw new Error(`Vacancy ${index + 1} is invalid.`);
-    const title = getText(item.title, "title", index + 1, 180);
+    const title = getText(item.title, "title", index + 1, 250);
     const description = getText(item.description, "description", index + 1, 20_000);
     const department = getOptionalText(item.department, "department", index + 1, 180);
     const location = getOptionalText(item.location, "location", index + 1, 180);
