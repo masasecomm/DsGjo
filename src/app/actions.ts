@@ -6,9 +6,6 @@ import { requireAdmin } from "@/lib/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import {
-  buildDpsaCircularPdfUrl,
-} from "@/lib/dpsa-circular-discovery";
 import { getJobSlug } from "@/lib/job-slugs";
 
 export type FormState = { message: string; error?: boolean };
@@ -351,66 +348,6 @@ export async function createImportedJobs(formData: FormData) {
   revalidatePath("/jobs");
   revalidatePath("/admin/jobs");
   redirect(`/admin/jobs?imported=${inserts.length}`);
-}
-
-export async function createImportedDpsaCircularJobs(formData: FormData) {
-  const supabase = await requireAdmin();
-  const yearValue = formData.get("year");
-  const numberValue = formData.get("number");
-  const pdfUrlValue = formData.get("pdf_url");
-  const year = typeof yearValue === "string" && /^\d{4}$/.test(yearValue) ? Number(yearValue) : 0;
-  const number = typeof numberValue === "string" && /^\d{1,3}$/.test(numberValue) ? Number(numberValue) : 0;
-  const expectedPdfUrl = buildDpsaCircularPdfUrl(year, number);
-  if (
-    year < 2000 ||
-    year > new Date().getUTCFullYear() + 1 ||
-    number < 1 ||
-    number > 100 ||
-    pdfUrlValue !== expectedPdfUrl
-  ) {
-    throw new Error("The DPSA circular details are invalid. Check for circular updates again.");
-  }
-
-  const inserts = validateImportedJobs(formData.get("jobs"));
-  const rpcJobs: Json[] = inserts.map((job) => ({
-    title: job.title,
-    slug: job.slug,
-    department: job.department ?? null,
-    location: job.location ?? null,
-    closing_date: job.closing_date ?? null,
-    reference_number: job.reference_number ?? null,
-    province: job.province ?? null,
-    employment_type: job.employment_type ?? null,
-    salary_text: job.salary_text ?? null,
-    salary_min: job.salary_min ?? null,
-    salary_max: job.salary_max ?? null,
-    salary_currency: job.salary_currency ?? null,
-    job_level: job.job_level ?? null,
-    dpsa_post_number: job.dpsa_post_number ?? null,
-    source_url: job.source_url ?? null,
-    source_published_at: job.source_published_at ?? null,
-    structured_details: job.structured_details ?? {},
-    description: job.description,
-    application_url: job.application_url ?? null,
-    status: "published",
-  }));
-  const { data: importedCount, error } = await supabase.rpc("import_dpsa_circular_jobs", {
-    p_year: year,
-    p_circular_number: number,
-    p_pdf_url: expectedPdfUrl,
-    p_jobs: rpcJobs,
-  });
-  if (error) {
-    if (error.code === "23505") {
-      throw new Error("This DPSA circular has already been imported. Check for updates again.");
-    }
-    throw new Error(`Could not import this DPSA circular. Apply the circular-tracking database migration, then try again. ${error.message}`);
-  }
-
-  revalidatePath("/");
-  revalidatePath("/jobs");
-  revalidatePath("/admin/jobs");
-  redirect(`/admin/jobs?imported=${importedCount}`);
 }
 
 export async function updateJobStatus(formData: FormData) {
