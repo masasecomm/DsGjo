@@ -35,6 +35,14 @@ function getText(
   return value.trim();
 }
 
+function getOptionalText(value: unknown, field: string, index: number, maxLength: number) {
+  if (value === undefined || value === null) return "";
+  if (typeof value !== "string") {
+    throw new Error(`Vacancy ${index} has invalid ${field} details.`);
+  }
+  return value.trim().slice(0, maxLength);
+}
+
 function getStringList(value: unknown, field: string, index: number): string[] {
   if (value === undefined) return [];
   if (
@@ -108,14 +116,14 @@ function validateCircularJobs(
     if (!isRecord(item)) throw new Error(`Vacancy ${index + 1} is invalid.`);
     const title = getText(item.title, "title", index + 1, 180);
     const description = getText(item.description, "description", index + 1, 20_000);
-    const department = getText(item.department, "department", index + 1, 180);
-    const location = getText(item.location, "location", index + 1, 180);
-    const referenceNumber = getText(item.reference_number, "reference number", index + 1, 250);
-    const province = getText(item.province, "province", index + 1, 100);
+    const department = getOptionalText(item.department, "department", index + 1, 180);
+    const location = getOptionalText(item.location, "location", index + 1, 180);
+    const referenceNumber = getOptionalText(item.reference_number, "reference number", index + 1, 250);
+    const province = getOptionalText(item.province, "province", index + 1, 100);
     const employmentType = item.employment_type;
-    const salaryText = getText(item.salary_text, "salary", index + 1);
-    const jobLevel = getText(item.job_level, "job level", index + 1, 50);
-    const postNumber = getText(item.dpsa_post_number, "post number", index + 1, 40);
+    const salaryText = getOptionalText(item.salary_text, "salary", index + 1, 5000);
+    const jobLevel = getOptionalText(item.job_level, "job level", index + 1, 50);
+    const postNumber = getOptionalText(item.dpsa_post_number, "post number", index + 1, 40);
     const sourcePublishedAt = getText(item.source_published_at, "publication date", index + 1, 10);
     const applicationUrl = getText(item.application_url, "application link", index + 1, 2048);
     const salaryMin = getOptionalNumber(item.salary_min, "salary", index + 1);
@@ -233,20 +241,34 @@ export async function POST(request: Request) {
     }
 
     if (action === "check") {
-      const { data, error } = await supabase
+      const { data: importedCircular, error: importStatusError } = await supabase
         .from("imported_dpsa_circulars")
         .select("job_count")
         .eq("year", circular.year)
         .eq("circular_number", circular.number)
         .maybeSingle();
-      if (error) throw new Error(`Could not check the circular import status: ${error.message}`);
-      return Response.json({ alreadyImported: Boolean(data), posted: data?.job_count ?? 0 });
+      if (importStatusError) throw new Error(`Could not check the circular import status: ${importStatusError.message}`);
+      const { data: existingJobs, error: existingJobsError } = await supabase
+        .from("jobs")
+        .select("id")
+        .eq("source_url", circular.pdfUrl);
+      if (existingJobsError) throw new Error(`Could not check for existing circular vacancies: ${existingJobsError.message}`);
+      return Response.json({
+        registered: Boolean(importedCircular),
+        existingCount: existingJobs?.length ?? 0,
+        previouslyImportedCount: importedCircular?.job_count ?? 0,
+      });
     }
 
     if (action === "batch") {
       const jobs = validateCircularJobs(body.jobs, circular.pdfUrl);
+      const conflictPolicy = body.conflictPolicy;
+      if (conflictPolicy !== "skip" && conflictPolicy !== "rewrite") {
+        return Response.json({ error: "Choose whether to rewrite or skip existing vacancies." }, { status: 400 });
+      }
       const postNumbers = jobs.flatMap((job) => job.dpsa_post_number ? [job.dpsa_post_number] : []);
       const existingByPostNumber = new Map<string, { id: string }>();
+      const existingBySlug = new Map<string, { id: string }>();
       if (postNumbers.length > 0) {
         const { data: existingJobs, error: existingJobsError } = await supabase
           .from("jobs")
@@ -258,22 +280,37 @@ export async function POST(request: Request) {
           if (job.dpsa_post_number) existingByPostNumber.set(job.dpsa_post_number, { id: job.id });
         }
       }
+      const { data: slugMatches, error: slugMatchError } = await supabase
+        .from("jobs")
+        .select("id,slug")
+        .eq("source_url", circular.pdfUrl)
+        .in("slug", jobs.map((job) => job.slug));
+      if (slugMatchError) throw new Error(`Could not check existing vacancy slugs: ${slugMatchError.message}`);
+      for (const job of slugMatches ?? []) {
+        existingBySlug.set(job.slug, { id: job.id });
+      }
       const usedIds = new Set<string>();
       const resumableJobs = jobs.map((job) => {
         const existing = job.dpsa_post_number
-          ? existingByPostNumber.get(job.dpsa_post_number)
-          : undefined;
+          ? existingByPostNumber.get(job.dpsa_post_number) ?? existingBySlug.get(job.slug)
+          : existingBySlug.get(job.slug);
         if (!existing || usedIds.has(existing.id)) return job;
         usedIds.add(existing.id);
         return { ...job, id: existing.id };
       });
 
-      const { error } = await supabase.from("jobs").upsert(resumableJobs, { onConflict: "id" });
-      if (error) throw new Error(`Could not publish this batch: ${error.message}`);
+      const skippedCount = conflictPolicy === "skip" ? usedIds.size : 0;
+      const jobsToSave = conflictPolicy === "skip"
+        ? resumableJobs.filter((job) => !job.id)
+        : resumableJobs;
+      if (jobsToSave.length > 0) {
+        const { error } = await supabase.from("jobs").upsert(jobsToSave, { onConflict: "id" });
+        if (error) throw new Error(`Could not publish this batch: ${error.message}`);
+      }
       revalidatePath("/");
       revalidatePath("/jobs");
       revalidatePath("/admin/jobs");
-      return Response.json({ posted: jobs.length });
+      return Response.json({ posted: jobs.length - skippedCount, skipped: skippedCount, processed: jobs.length });
     }
 
     if (action === "finish") {
@@ -285,10 +322,9 @@ export async function POST(request: Request) {
       const { count, error: countError } = await supabase
         .from("jobs")
         .select("id", { count: "exact", head: true })
-        .eq("source_url", circular.pdfUrl)
-        .eq("status", "published");
+        .eq("source_url", circular.pdfUrl);
       if (countError) throw new Error(`Could not verify published vacancies: ${countError.message}`);
-      if (count !== totalJobs) {
+      if ((count ?? 0) < totalJobs) {
         return Response.json({
           error: `Only ${count ?? 0} of ${totalJobs} vacancies are confirmed as posted. Retry publishing to finish the remaining jobs.`,
         }, { status: 409 });

@@ -365,6 +365,27 @@ export async function updateJobStatus(formData: FormData) {
   revalidatePath("/admin/jobs");
 }
 
+export async function deleteJob(formData: FormData) {
+  const supabase = await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("Missing vacancy ID.");
+
+  const { data: job, error: lookupError } = await supabase
+    .from("jobs")
+    .select("slug")
+    .eq("id", id)
+    .maybeSingle();
+  if (lookupError) throw new Error(`Could not find vacancy to delete: ${lookupError.message}`);
+  if (!job) throw new Error("This vacancy no longer exists.");
+
+  const { error } = await supabase.from("jobs").delete().eq("id", id);
+  if (error) throw new Error(`Could not permanently delete vacancy: ${error.message}`);
+  revalidatePath("/");
+  revalidatePath("/jobs");
+  revalidatePath(`/${job.slug}`);
+  revalidatePath("/admin/jobs");
+}
+
 export async function updateJob(formData: FormData) {
   const supabase = await requireAdmin();
   const id = String(formData.get("id") ?? "");
