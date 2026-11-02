@@ -71,8 +71,8 @@ export default function PrivacyPolicyPage() {
                   <li><strong>Administrator access:</strong> administrator account information is used to sign in and manage the website; visitors do not need an account to browse vacancies.</li>
                 </ul>
                 <h3>Technical information</h3>
-                <p>When you search vacancies, we store the search term and daily search count in aggregate to show popular searches. We also record daily counts of public page views, including vacancy, province, and department pages. These analytics do not use cookies or visitor identifiers and are not linked to an account, name, or visitor profile. Search and page rankings use counts from the most recent 30 days. Our hosting and database providers may separately process technical information, such as IP address, browser details, and request logs, to deliver the site and help protect its security.</p>
-                <p>Essential cookies may be used for administrator sign-in and session security. We do not use analytics or advertising cookies.</p>
+                <p>When you search vacancies, we store the search term and daily search count in aggregate to show popular searches. We also record daily counts of public page views, including vacancy, province, and department pages. These first-party counts are not linked to an account, name, or visitor profile. We also use Google Analytics (measurement ID G-69H0HQGRT9) to measure site usage. Google Analytics may use cookies and process technical data such as online identifiers and device information. Search and page rankings use first-party counts from the most recent 30 days. Our hosting and analytics providers may process technical information to deliver, measure, and protect the site.</p>
+                <p>Essential cookies may be used for administrator sign-in and session security. Google Analytics may set analytics cookies. You can manage or delete cookies in your browser settings.</p>
               </div>
             </section>
 

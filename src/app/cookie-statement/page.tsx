@@ -30,8 +30,8 @@ const cookieTypes = [
   {
     number: "03",
     title: "Analytics",
-    status: "NO ANALYTICS COOKIES",
-    description: "We do not use analytics cookies. Anonymous daily counts of searches and public page views are stored without cookies or visitor identifiers.",
+    status: "IN USE",
+    description: "Google Analytics (measurement ID G-69H0HQGRT9) measures site usage and may use analytics cookies. Separate anonymous daily counts of searches and page views are stored without cookies or visitor identifiers.",
     tone: "optional",
   },
   {
@@ -66,7 +66,7 @@ export default function CookieStatementPage() {
             <div>
               <h2>What are cookies?</h2>
               <p>Cookies are small text files a website can store in your browser. Some are needed for basic functions, such as keeping a secure administrator session. Others can remember preferences or measure site usage.</p>
-              <p>This independent site turns DPSA circulars and other government vacancy notices into searchable listings. We use only cookies needed for essential site functions. Anonymous aggregate search and page-view counts do not use cookies or identify individual visitors.</p>
+              <p>This independent site turns DPSA circulars and other government vacancy notices into searchable listings. We use essential cookies for site security and administrator sign-in, and Google Analytics cookies to measure site usage. Separate aggregate search and page-view counts do not use cookies or identify individual visitors.</p>
             </div>
           </section>
 
@@ -88,8 +88,7 @@ export default function CookieStatementPage() {
           <section className="cookie-controls">
             <span className="cookie-controls-label">YOUR CHOICES</span>
             <h2>Managing cookies in your browser</h2>
-            <p>Most browsers let you view, block, or delete cookies in their privacy or security settings. Because this site does not currently use optional cookies, there is no cookie-preference banner. Blocking essential cookies may prevent administrator sign-in or other secure site functions from working correctly.</p>
-            <p>If we introduce non-essential cookies in future, we’ll update this page and provide appropriate choices before using them where required.</p>
+            <p>Most browsers let you view, block, or delete cookies in their privacy or security settings. Blocking essential cookies may prevent administrator sign-in or other secure site functions from working correctly. Blocking analytics cookies may affect Google Analytics measurement.</p>
           </section>
 
           <section className="cookie-contact">

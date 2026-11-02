@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Jost } from "next/font/google";
 import { Suspense } from "react";
+import Script from "next/script";
 import { getSiteUrl } from "@/lib/site-url";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import "./globals.css";
@@ -49,5 +50,24 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
-  return <html lang="en" className={jost.variable}><body><Suspense fallback={null}><PageViewTracker /></Suspense>{children}</body></html>;
+  return (
+    <html lang="en" className={jost.variable}>
+      <body>
+        <Suspense fallback={null}><PageViewTracker /></Suspense>
+        {children}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-69H0HQGRT9"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){window.dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-69H0HQGRT9');
+          `}
+        </Script>
+      </body>
+    </html>
+  );
 }
