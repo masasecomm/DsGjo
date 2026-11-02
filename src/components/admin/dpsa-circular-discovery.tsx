@@ -17,16 +17,21 @@ type PublishProgress = {
   key: string;
   total: number;
   completed: number;
+  skipped: number;
   startedAt: number;
   estimatedMilliseconds: number | null;
   complete: boolean;
 };
 
 type ImportResponse = {
-  alreadyImported?: boolean;
+  existingCount?: number;
   posted?: number;
+  processed?: number;
+  skipped?: number;
   error?: string;
 };
+
+type ConflictPolicy = "rewrite" | "skip";
 
 function isDpsaCircular(value: unknown): value is DpsaCircular {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
@@ -51,7 +56,7 @@ function PublishAllButton({ count, pending, complete, completed, disabled }: {
       {pending
         ? `Publishing ${completed} of ${count}...`
         : complete
-          ? `Published all ${count} vacancies`
+          ? `Finished all ${count} vacancies`
           : completed > 0
             ? `Retry remaining ${count - completed}`
             : `Publish all ${count} ${count === 1 ? "vacancy" : "vacancies"}`}
@@ -65,6 +70,7 @@ async function sendImportRequest(payload: Record<string, unknown>) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
     cache: "no-store",
+    signal: AbortSignal.timeout(45_000),
   });
   if (!response.headers.get("content-type")?.includes("application/json")) {
     throw new Error(response.redirected
@@ -90,6 +96,12 @@ function getCurrentTime() {
   return Date.now();
 }
 
+function withoutKey<T>(values: Record<string, T>, key: string): Record<string, T> {
+  const updated = { ...values };
+  delete updated[key];
+  return updated;
+}
+
 export function DpsaCircularDiscovery() {
   const [circulars, setCirculars] = useState<DpsaCircular[]>([]);
   const [parsedCirculars, setParsedCirculars] = useState<ParsedCircular[]>([]);
@@ -100,6 +112,9 @@ export function DpsaCircularDiscovery() {
   const [error, setError] = useState("");
   const [publishingKey, setPublishingKey] = useState("");
   const [publishProgress, setPublishProgress] = useState<PublishProgress | null>(null);
+  const [existingCounts, setExistingCounts] = useState<Record<string, number>>({});
+  const [conflictPolicies, setConflictPolicies] = useState<Record<string, ConflictPolicy>>({});
+  const [publishErrors, setPublishErrors] = useState<Record<string, string>>({});
 
   async function checkForUpdates() {
     setIsChecking(true);
@@ -173,6 +188,9 @@ export function DpsaCircularDiscovery() {
         item.circular.year !== circular.year || item.circular.number !== circular.number,
       ), parsedCircular]);
       setPublishProgress((current) => current?.key === key ? null : current);
+      setExistingCounts((current) => withoutKey(current, key));
+      setConflictPolicies((current) => withoutKey(current, key));
+      setPublishErrors((current) => withoutKey(current, key));
       setMessage(`Parsed ${parsed.length} ${parsed.length === 1 ? "vacancy" : "vacancies"} from ${circular.label}.`);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : `Could not parse ${circular.label}.`);
@@ -197,10 +215,21 @@ export function DpsaCircularDiscovery() {
 
     const startedAt = previousProgress?.startedAt ?? getCurrentTime();
     let completed = previousProgress?.completed ?? 0;
+    let skipped = previousProgress?.skipped ?? 0;
     let estimatedMilliseconds = previousProgress?.estimatedMilliseconds ?? null;
     setPublishingKey(key);
     setError("");
     setMessage("");
+    setPublishErrors((current) => withoutKey(current, key));
+    setPublishProgress({
+      key,
+      total: jobs.length,
+      completed,
+      skipped,
+      startedAt,
+      estimatedMilliseconds,
+      complete: false,
+    });
 
     try {
       const status = await sendImportRequest({
@@ -209,29 +238,31 @@ export function DpsaCircularDiscovery() {
         number: circular.number,
         pdfUrl: circular.pdfUrl,
       });
-      if (status.alreadyImported) {
-        const posted = Math.min(status.posted ?? jobs.length, jobs.length);
-        setPublishProgress({ key, total: jobs.length, completed: posted, startedAt, estimatedMilliseconds: 0, complete: true });
-        setMessage(`${circular.label} has already been published (${posted} vacancies).`);
+      const existingCount = status.existingCount ?? 0;
+      setExistingCounts((current) => ({ ...current, [key]: existingCount }));
+      if (existingCount > 0 && !conflictPolicies[key]) {
+        setMessage(`Found ${existingCount} existing ${existingCount === 1 ? "vacancy" : "vacancies"} from ${circular.label}. Choose whether to rewrite or skip them, then press Publish again.`);
         return;
       }
 
-      setPublishProgress({ key, total: jobs.length, completed, startedAt, estimatedMilliseconds, complete: false });
+      const conflictPolicy = conflictPolicies[key] ?? "rewrite";
       for (let offset = completed; offset < jobs.length; offset += publishBatchSize) {
         const batch = jobs.slice(offset, offset + publishBatchSize);
-        await sendImportRequest({
+        const result = await sendImportRequest({
           action: "batch",
           year: circular.year,
           number: circular.number,
           pdfUrl: circular.pdfUrl,
+          conflictPolicy,
           jobs: batch,
         });
-        completed += batch.length;
+        completed += result.processed ?? batch.length;
+        skipped += result.skipped ?? 0;
         const remaining = jobs.length - completed;
         estimatedMilliseconds = remaining > 0
           ? (getCurrentTime() - startedAt) * remaining / completed
           : 0;
-        setPublishProgress({ key, total: jobs.length, completed, startedAt, estimatedMilliseconds, complete: false });
+        setPublishProgress({ key, total: jobs.length, completed, skipped, startedAt, estimatedMilliseconds, complete: false });
       }
 
       await sendImportRequest({
@@ -241,13 +272,16 @@ export function DpsaCircularDiscovery() {
         pdfUrl: circular.pdfUrl,
         totalJobs: jobs.length,
       });
-      setPublishProgress({ key, total: jobs.length, completed, startedAt, estimatedMilliseconds: 0, complete: true });
-      setMessage(`Published all ${completed} vacancies from ${circular.label}.`);
+      setPublishProgress({ key, total: jobs.length, completed, skipped, startedAt, estimatedMilliseconds: 0, complete: true });
+      setMessage(`Finished ${completed} vacancies from ${circular.label}: ${completed - skipped} posted or rewritten, ${skipped} skipped.`);
     } catch (reason) {
-      setPublishProgress({ key, total: jobs.length, completed, startedAt, estimatedMilliseconds, complete: false });
-      setError(reason instanceof Error
-        ? reason.message
-        : "Publishing stopped. Successfully posted batches are saved; select retry to continue.");
+      const failure = reason instanceof Error
+        ? reason.name === "TimeoutError"
+          ? "The server took too long to answer. Any completed batches are saved; press Publish again to safely retry."
+          : reason.message
+        : "Publishing stopped. Any completed batches are saved; press Publish again to safely retry.";
+      setPublishProgress({ key, total: jobs.length, completed, skipped, startedAt, estimatedMilliseconds: null, complete: false });
+      setPublishErrors((current) => ({ ...current, [key]: failure }));
     } finally {
       setPublishingKey("");
     }
@@ -332,6 +366,8 @@ export function DpsaCircularDiscovery() {
         const key = `${circular.year}-${circular.number}`;
         const currentProgress = publishProgress?.key === key ? publishProgress : null;
         const remaining = currentProgress ? Math.max(0, currentProgress.total - currentProgress.completed) : 0;
+        const existingCount = existingCounts[key];
+        const conflictPolicy = conflictPolicies[key];
         return (
           <form
             className="circular-import-results"
@@ -385,22 +421,47 @@ export function DpsaCircularDiscovery() {
                 complete={Boolean(currentProgress?.complete)}
                 completed={currentProgress?.completed ?? 0}
                 count={vacancies.length}
-                disabled={Boolean(publishingKey) && publishingKey !== key}
+                disabled={(Boolean(publishingKey) && publishingKey !== key)
+                  || (typeof existingCount === "number" && existingCount > 0 && !conflictPolicy)}
                 pending={publishingKey === key}
               />
             </div>
+            {typeof existingCount === "number" && existingCount > 0 && (
+              <fieldset className="circular-conflict-policy">
+                <legend>{existingCount} existing {existingCount === 1 ? "vacancy" : "vacancies"} found for this circular</legend>
+                <label>
+                  <input
+                    checked={conflictPolicy === "rewrite"}
+                    name={`conflict-policy-${key}`}
+                    onChange={() => setConflictPolicies((current) => ({ ...current, [key]: "rewrite" }))}
+                    type="radio"
+                  />
+                  Rewrite existing vacancies with this circular’s latest details
+                </label>
+                <label>
+                  <input
+                    checked={conflictPolicy === "skip"}
+                    name={`conflict-policy-${key}`}
+                    onChange={() => setConflictPolicies((current) => ({ ...current, [key]: "skip" }))}
+                    type="radio"
+                  />
+                  Skip existing vacancies and publish only missing ones
+                </label>
+              </fieldset>
+            )}
             {currentProgress && (
               <div className="circular-publish-progress" role="status" aria-live="polite">
                 <div className="circular-publish-progress-label">
-                  <span>{currentProgress.completed} posted</span>
+                  <span>{currentProgress.completed - currentProgress.skipped} posted or rewritten</span>
                   <span>{remaining} remaining</span>
                 </div>
+                {currentProgress.skipped > 0 && <span>{currentProgress.skipped} skipped</span>}
                 <progress
                   aria-label={`Publishing ${circular.label}`}
                   max={currentProgress.total}
                   value={currentProgress.completed}
                 />
-                {!currentProgress.complete && (
+                {!currentProgress.complete && !publishErrors[key] && (
                   <span>
                     Estimated time remaining: {currentProgress.estimatedMilliseconds === null
                       ? "calculating..."
@@ -409,6 +470,7 @@ export function DpsaCircularDiscovery() {
                 )}
               </div>
             )}
+            {publishErrors[key] && <p className="circular-message error" role="alert">{publishErrors[key]}</p>}
           </form>
         );
       })}
