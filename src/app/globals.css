@@ -87,9 +87,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .province-filter:hover { background: #e5ebee; }
 .province-filter.is-active { border-color: #e8edf0; background: #fff; box-shadow: 0 6px 18px rgba(23,35,31,.06); }
 .province-filter { font-size: 13px; font-weight: 700; white-space: nowrap; text-transform: uppercase; }
-.job-pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin: 30px 0 0; }
-.job-pagination a { display: inline-grid; min-width: 38px; min-height: 38px; place-items: center; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--green); background: #fff; font-size: 12px; font-weight: 700; }
-.job-pagination a:hover, .job-pagination a.is-current { border-color: var(--green); color: #fff; background: var(--green); }
+.job-pagination { display: flex; justify-content: center; margin: 30px 0 0; }
+.job-pagination .pagination { display: flex; flex-wrap: wrap; justify-content: center; padding-left: 0; margin: 0; list-style: none; }
+.job-pagination .page-item { margin-left: -1px; }
+.job-pagination .page-item:first-child { margin-left: 0; }
+.job-pagination .page-link { position: relative; display: block; min-width: 40px; min-height: 40px; padding: 9px 13px; border: 1px solid #dee2e6; color: #0d6efd; background: #fff; font-size: 14px; line-height: 20px; text-align: center; text-decoration: none; }
+.job-pagination .page-item:first-child .page-link { border-radius: 6px 0 0 6px; }
+.job-pagination .page-item:last-child .page-link { border-radius: 0 6px 6px 0; }
+.job-pagination .page-link:hover { z-index: 1; border-color: #dee2e6; color: #0a58ca; background: #e9ecef; }
+.job-pagination .page-item.active .page-link { z-index: 2; border-color: #0d6efd; color: #fff; background: #0d6efd; }
+.job-pagination .page-item.disabled .page-link { color: #6c757d; background: #fff; pointer-events: none; }
 .job-filter-error { grid-column: 1 / -1; flex-basis: 100%; color: #9c3d35; font-size: 11px; }
 .vacancy-card { display: grid; min-width: 0; min-height: 188px; grid-template-columns: 60px minmax(0, 1fr); align-content: center; align-items: start; gap: 22px; padding: 24px 30px; border: 1px solid #e6eaf0; border-radius: 11px; background: #fff; transition: box-shadow .18s ease, transform .18s ease; }
 .vacancy-card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(26,52,94,.07); }
