@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { updateJobStatus } from "@/app/actions";
+import { DeleteJobButton } from "@/components/admin/delete-job-button";
 import { DpsaCircularDiscovery } from "@/components/admin/dpsa-circular-discovery";
 import { requireAdmin } from "@/lib/admin";
 
@@ -32,7 +33,7 @@ async function AdminJobsContent({
       <DpsaCircularDiscovery />
       <section className="admin-panel">
         <h2>All vacancies ({jobs.length})</h2>
-        {jobs.length ? <table className="admin-table"><thead><tr><th>Title</th><th>Department</th><th>Status</th><th>Closing date</th><th>Actions</th></tr></thead><tbody>{jobs.map((job) => <tr key={job.id}><td><a className="text-link" href={`/admin/jobs/${job.id}/edit`}>{job.title}</a><br /><small>/{job.slug}/</small></td><td>{job.department || "—"}</td><td><span className={`admin-status ${job.status}`}>{job.status}</span></td><td>{job.closing_date || "—"}</td><td><form action={updateJobStatus}><input name="id" type="hidden" value={job.id} /><input name="status" type="hidden" value={job.status === "published" ? "closed" : "published"} /><button type="submit">{job.status === "published" ? "Close" : "Publish"}</button></form></td></tr>)}</tbody></table> : <p className="admin-empty">Imported vacancies will appear here.</p>}
+        {jobs.length ? <table className="admin-table"><thead><tr><th>Title</th><th>Department</th><th>Status</th><th>Closing date</th><th>Actions</th></tr></thead><tbody>{jobs.map((job) => <tr key={job.id}><td><a className="text-link" href={`/admin/jobs/${job.id}/edit`}>{job.title}</a><br /><small>/{job.slug}/</small></td><td>{job.department || "—"}</td><td><span className={`admin-status ${job.status}`}>{job.status}</span></td><td>{job.closing_date || "—"}</td><td>{job.status !== "published" && <form action={updateJobStatus}><input name="id" type="hidden" value={job.id} /><input name="status" type="hidden" value="published" /><button type="submit">Publish</button></form>}<DeleteJobButton id={job.id} title={job.title} /></td></tr>)}</tbody></table> : <p className="admin-empty">Imported vacancies will appear here.</p>}
       </section>
     </>
   );
