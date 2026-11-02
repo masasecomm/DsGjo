@@ -28,7 +28,7 @@ function getText(
   index: number,
   maxLength = 5000,
 ): string {
-  if (value === undefined) return "";
+  if (value === undefined || value === null) return "";
   if (typeof value !== "string" || value.length > maxLength) {
     throw new Error(`Vacancy ${index} has invalid ${field} details.`);
   }
