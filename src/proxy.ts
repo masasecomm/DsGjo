@@ -1,8 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { clickedLegacyPaths } from "@/lib/clicked-legacy-paths";
 import { getSupabaseConfig, isSupabaseConfigured } from "@/lib/supabase/config";
 
 export async function proxy(request: NextRequest) {
+  const hostname = request.nextUrl.hostname.toLowerCase();
+  const pathname = request.nextUrl.pathname.replace(/\/+$/, "") || "/";
+  if (
+    (hostname === "dpsagovernmentjobs.co.za" || hostname === "www.dpsagovernmentjobs.co.za")
+    && clickedLegacyPaths.has(pathname)
+  ) {
+    return NextResponse.redirect("https://www.dpsagovernmentjobs.co.za/", 308);
+  }
+
   const legacyCircularMatch = request.nextUrl.pathname.match(
     /^\/(?:category\/)?[a-z0-9-]*dpsa-circular-(\d{1,3})-of-(20\d{2})(?:-[a-z0-9-]+)?\/?$/i,
   );

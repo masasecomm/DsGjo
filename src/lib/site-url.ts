@@ -1,12 +1,12 @@
-const fallbackSiteUrl = "https://ds-gjo.vercel.app";
+const productionSiteUrl = "https://www.dpsagovernmentjobs.co.za";
 
 export function getSiteUrl() {
-  const productionDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL;
-  const configuredUrl = productionDomain
-    ? `https://${productionDomain}`
-    : process.env.NODE_ENV === "production"
-      ? fallbackSiteUrl
-      : process.env.NEXT_PUBLIC_SITE_URL || fallbackSiteUrl;
+  const configuredUrl = process.env.NODE_ENV === "production"
+    ? productionSiteUrl
+    : process.env.NEXT_PUBLIC_SITE_URL
+      || (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : productionSiteUrl);
 
   try {
     return new URL(configuredUrl).origin;
