@@ -8,23 +8,37 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ProvinceFilters } from "@/components/province-filters";
 import { JobSearchForm } from "@/components/job-search-form";
+import { JobPagination } from "@/components/job-pagination";
 import { VacancyCard } from "@/components/vacancy-card";
 import {
   getPublishedJobFacets,
   getPopularJobSearches,
-  getPublishedJobs,
+  getPublishedJobPage,
 } from "@/lib/jobs";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const instant = false;
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string | string[] }>;
+}) {
   await connection();
-  const [jobs, facets, popularSearches] = await Promise.all([
-    getPublishedJobs(6),
+  const { page: pageParam } = await searchParams;
+  const requestedPage = Number(Array.isArray(pageParam) ? pageParam[0] : pageParam);
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const [jobPage, facets, popularSearches] = await Promise.all([
+    getPublishedJobPage(page, 10),
     getPublishedJobFacets(),
     getPopularJobSearches(5),
   ]);
+  const pageCount = Math.max(1, Math.ceil(jobPage.total / 10));
+  const currentPage = Math.min(page, pageCount);
+  const result = currentPage === page
+    ? jobPage
+    : await getPublishedJobPage(currentPage, 10);
+  const jobs = result.jobs;
 
   return (
     <div className="home-page">
@@ -59,6 +73,12 @@ export default async function Home() {
           </div>
           {!isSupabaseConfigured() && <div className="home-setup-notice">Connect your Supabase project and publish vacancies from the admin dashboard to show live listings here.</div>}
           <ProvinceFilters provinces={facets.provinces} totalCount={facets.total} />
+          {result.total > 0 && (
+            <p className="admin-subtitle">
+              {result.total} {result.total === 1 ? "opportunity" : "opportunities"}
+              {` · Page ${currentPage} of ${pageCount}`}
+            </p>
+          )}
           <div className="home-job-grid">
             {jobs.length > 0 ? jobs.map((job) => (
               <VacancyCard job={job} key={job.id} />
@@ -70,6 +90,12 @@ export default async function Home() {
               </div>
             )}
           </div>
+          <JobPagination
+            page={currentPage}
+            totalItems={result.total}
+            pageSize={10}
+            hrefForPage={(pageNumber) => `/?page=${pageNumber}#latest-jobs`}
+          />
         </section>
 
       </main>
