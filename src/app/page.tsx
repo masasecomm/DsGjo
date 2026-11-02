@@ -15,6 +15,7 @@ import {
   getPopularJobSearches,
   getPublishedJobPage,
 } from "@/lib/jobs";
+import { getSiteUrl } from "@/lib/site-url";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const instant = false;
@@ -39,18 +40,33 @@ export default async function Home({
     ? jobPage
     : await getPublishedJobPage(currentPage, 10);
   const jobs = result.jobs;
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "DPSA Jobs",
+    url: getSiteUrl(),
+    description:
+      "Find current South African government and DPSA vacancies. Search public service jobs by title, province or department, and view application details.",
+    inLanguage: "en-ZA",
+  };
 
   return (
     <div className="home-page">
       <SiteHeader />
       <main>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema).replace(/</g, "\\u003c"),
+          }}
+        />
         <section className="home-hero">
           <div className="home-hero-orb home-hero-orb-one" aria-hidden="true" />
           <div className="home-hero-orb home-hero-orb-two" aria-hidden="true" />
           <div className="home-hero-inner">
             <div className="home-hero-copy">
-              <h1>Popular Searches</h1>
-              <p>Find government vacancies by job title, province or department.</p>
+              <h1>South African Government Jobs</h1>
+              <p>Find current government vacancies by job title, province or department.</p>
               <JobSearchForm variant="home" provinces={facets.provinces.map(({ name }) => name)} departments={facets.departments} />
               <div className="home-popular-searches">
                 <strong>Popular Searches:</strong>

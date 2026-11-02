@@ -17,11 +17,35 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   title: {
-    default: "DPSA Jobs | South African Government Vacancies",
+    default: "South African Government Jobs and Vacancies | DPSA Jobs",
     template: "%s | DPSA Jobs",
   },
   description:
-    "Find the latest South African government vacancies, explore public service careers, and sign up for job alerts.",
+    "Find current South African government and DPSA vacancies. Search public service jobs by title, province or department, and view application details.",
+  openGraph: {
+    type: "website",
+    locale: "en_ZA",
+    url: "/",
+    siteName: "DPSA Jobs",
+    title: "South African Government Jobs and Vacancies | DPSA Jobs",
+    description:
+      "Find current South African government and DPSA vacancies. Search public service jobs by title, province or department, and view application details.",
+    images: [
+      {
+        url: "/dpsa-government-jobs.png",
+        width: 400,
+        height: 400,
+        alt: "DPSA Government Jobs",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "South African Government Jobs and Vacancies | DPSA Jobs",
+    description:
+      "Find current South African government and DPSA vacancies. Search public service jobs by title, province or department, and view application details.",
+    images: ["/dpsa-government-jobs.png"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
