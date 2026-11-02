@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { ArrowLeft, ArrowUpRight, Banknote, CalendarDays, MapPin, MessageCircle } from "lucide-react";
 import { CommentForm } from "@/components/comment-form";
@@ -246,7 +246,7 @@ export default async function JobPage({
       result = await getPublishedCircularJobPage(circular.year, circular.number, currentPage);
     }
     const jobs = result.jobs;
-    if (!jobs.length) notFound();
+    if (!jobs.length) redirect("/");
 
     return (
       <>
@@ -255,7 +255,7 @@ export default async function JobPage({
           <section className="inner-hero">
             <span className="section-kicker">DPSA VACANCY CIRCULAR</span>
             <h1>DPSA Circular {circular.number} of {circular.year}</h1>
-            <p>Current vacancies published in this circular.</p>
+            <p>Vacancies published in this circular, including closed positions.</p>
           </section>
           <section className="page-content">
             <p className="admin-subtitle">
@@ -278,7 +278,10 @@ export default async function JobPage({
 
   const requestedSlug = isLegacyJobsPath ? slug.slice(1).join("/") : slug.join("/");
   const job = await getPublishedJob(requestedSlug);
-  if (!job) notFound();
+  if (!job) {
+    if (slug.slice(0, -1).some((part) => parseDpsaCircularSlug(part))) redirect("/");
+    notFound();
+  }
   if (isLegacyJobsPath || job.slug !== requestedSlug) {
     permanentRedirect(`/${job.slug}`);
   }

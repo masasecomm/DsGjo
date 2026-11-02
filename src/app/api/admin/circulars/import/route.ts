@@ -332,20 +332,34 @@ export async function POST(request: Request) {
         }, { status: 409 });
       }
 
-      const { error } = await supabase.from("imported_dpsa_circulars").insert({
-        year: circular.year,
-        circular_number: circular.number,
-        source_pdf_url: circular.pdfUrl,
-        job_count: totalJobs,
+      const { data: retiredCirculars, error: retentionError } = await supabase.rpc("finish_dpsa_circular_import", {
+        p_year: circular.year,
+        p_circular_number: circular.number,
+        p_pdf_url: circular.pdfUrl,
+        p_total_jobs: totalJobs,
+        p_keep: 3,
       });
-      if (error && error.code !== "23505") throw new Error(`Could not finish recording the circular import: ${error.message}`);
+      if (retentionError) {
+        throw new Error(`Could not finish the circular import or enforce circular retention. Apply the circular-retention database migration, then retry. ${retentionError.message}`);
+      }
+      for (const retired of retiredCirculars ?? []) {
+        revalidatePath(`/dpsa-circular-${retired.circular_number}-of-${retired.year}`);
+      }
 
       revalidatePath("/");
       revalidatePath("/jobs");
       revalidatePath("/sitemap.xml");
       revalidatePath(`/dpsa-circular-${circular.number}-of-${circular.year}`);
       revalidatePath("/admin/jobs");
-      return Response.json({ posted: totalJobs, complete: true });
+      return Response.json({
+        posted: totalJobs,
+        complete: true,
+        retiredCirculars: (retiredCirculars ?? []).map(({ year, circular_number, job_count }) => ({
+          year,
+          number: circular_number,
+          jobCount: job_count,
+        })),
+      });
     }
 
     return Response.json({ error: "The publish request was invalid." }, { status: 400 });

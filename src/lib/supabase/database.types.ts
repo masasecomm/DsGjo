@@ -213,6 +213,20 @@ export type Database = {
         };
         Returns: number;
       };
+      finish_dpsa_circular_import: {
+        Args: {
+          p_year: number;
+          p_circular_number: number;
+          p_pdf_url: string;
+          p_total_jobs: number;
+          p_keep?: number;
+        };
+        Returns: {
+          year: number;
+          circular_number: number;
+          job_count: number;
+        }[];
+      };
       get_popular_job_searches: {
         Args: {
           p_limit?: number;

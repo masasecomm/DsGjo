@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getDpsaCircularSlug, parseDpsaCircularSlug } from "@/lib/job-slugs";
+import { buildDpsaCircularPdfUrl } from "@/lib/dpsa-circular-discovery";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
@@ -197,8 +198,7 @@ export async function getPublishedCircularJobPage(year: number, number: number, 
     .from("jobs")
     .select("id,title,slug,department,location,province,closing_date,description,application_url,status,created_at,updated_at", { count: "exact" })
     .eq("status", "published")
-    .ilike("description", `%DPSA CIRCULAR ${number} of ${year}%`)
-    .or(`closing_date.is.null,closing_date.gte.${getSouthAfricanDate()}`)
+    .or(`description.ilike.%DPSA CIRCULAR ${number} of ${year}%,source_url.eq.${buildDpsaCircularPdfUrl(year, number)}`)
     .order("created_at", { ascending: false })
     .order("id", { ascending: true })
     .range((page - 1) * pageSize, page * pageSize - 1);
@@ -216,7 +216,21 @@ export function getPublishedCircularSlugs(jobs: Pick<Job, "description" | "sourc
 export async function getPublishedCirculars(): Promise<PublishedCircular[]> {
   if (!isSupabaseConfigured()) return [];
 
-  const jobs = await getPublishedJobs(50_000);
+  const supabase = await createSupabaseServerClient();
+  const jobs: Pick<Job, "description" | "source_url">[] = [];
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from("jobs")
+      .select("description,source_url")
+      .eq("status", "published")
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(`Could not load published DPSA circulars: ${error.message}`);
+    jobs.push(...(data ?? []));
+    if ((data?.length ?? 0) < pageSize) break;
+  }
+
   const circulars = new Map<string, PublishedCircular>();
   for (const job of jobs) {
     const slug = getDpsaCircularSlug(`${job.description} ${job.source_url ?? ""}`);

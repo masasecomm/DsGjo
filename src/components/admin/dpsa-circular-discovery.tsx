@@ -36,6 +36,7 @@ type ImportResponse = {
   processed?: number;
   skipped?: number;
   error?: string;
+  retiredCirculars?: Array<{ year: number; number: number; jobCount: number }>;
 };
 
 type ConflictPolicy = "rewrite" | "skip";
@@ -309,7 +310,7 @@ export function DpsaCircularDiscovery({
         setPublishProgress({ key, total: jobs.length, completed, skipped, startedAt, estimatedMilliseconds, complete: false });
       }
 
-      await sendImportRequest({
+      const finishResult = await sendImportRequest({
         action: "finish",
         year: circular.year,
         number: circular.number,
@@ -317,7 +318,27 @@ export function DpsaCircularDiscovery({
         totalJobs: jobs.length,
       });
       setPublishProgress({ key, total: jobs.length, completed, skipped, startedAt, estimatedMilliseconds: 0, complete: true });
-      setMessage(`Finished ${completed} vacancies from ${circular.label}: ${completed - skipped} posted or rewritten, ${skipped} skipped.`);
+      const retiredKeys = new Set((finishResult.retiredCirculars ?? [])
+        .map((retired) => `${retired.year}-${retired.number}`));
+      const currentKey = `${circular.year}-${circular.number}`;
+      setPublishedCirculars((current) => {
+        const remaining = current.filter((published) =>
+          published.year !== circular.year
+          || published.number !== circular.number,
+        ).filter((published) => !retiredKeys.has(`${published.year}-${published.number}`));
+        return retiredKeys.has(currentKey)
+          ? remaining
+          : [{
+            year: circular.year,
+            number: circular.number,
+            importedAt: new Date().toISOString(),
+            jobCount: jobs.length,
+          }, ...remaining].slice(0, 3);
+      });
+      const retiredMessage = finishResult.retiredCirculars?.map((retired) =>
+        `Removed DPSA Circular ${retired.number} of ${retired.year} and its ${retired.jobCount} vacancies.`,
+      ).join(" ") ?? "";
+      setMessage(`Finished ${completed} vacancies from ${circular.label}: ${completed - skipped} posted or rewritten, ${skipped} skipped.${retiredMessage ? ` ${retiredMessage}` : ""}`);
     } catch (reason) {
       const failure = reason instanceof Error
         ? reason.name === "TimeoutError"
