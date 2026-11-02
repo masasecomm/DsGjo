@@ -5,6 +5,7 @@ import { DeleteAllJobsButton } from "@/components/admin/delete-all-jobs-button";
 import { DeleteJobButton } from "@/components/admin/delete-job-button";
 import { DpsaCircularDiscovery } from "@/components/admin/dpsa-circular-discovery";
 import { JobPagination } from "@/components/job-pagination";
+import { ResetCircularHistoryButton } from "@/components/admin/reset-circular-history-button";
 import { requireAdmin } from "@/lib/admin";
 
 async function AdminJobsContent({
@@ -56,7 +57,11 @@ async function AdminJobsContent({
           {importedCount} {importedCount === 1 ? "vacancy was" : "vacancies were"} published successfully.
         </div>
       )}
-      <DpsaCircularDiscovery initialPublishedCirculars={publishedCirculars} />
+      <DpsaCircularDiscovery
+        key={publishedCirculars.map(({ year, number }) => `${year}-${number}`).join(",")}
+        initialPublishedCirculars={publishedCirculars}
+      />
+      <ResetCircularHistoryButton count={publishedCirculars.length} />
       <section className="admin-panel">
         <div className="admin-panel-heading">
           <h2>All vacancies ({vacancyCount})</h2>

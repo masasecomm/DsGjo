@@ -405,6 +405,20 @@ export async function deleteAllJobs(formData: FormData) {
   revalidatePath("/admin/jobs");
 }
 
+export async function deleteAllImportedCirculars(formData: FormData) {
+  const supabase = await requireAdmin();
+  if (formData.get("confirmation") !== "RESET CIRCULAR HISTORY") {
+    throw new Error("Confirm the exact reset phrase before deleting circular history.");
+  }
+
+  const { error } = await supabase
+    .from("imported_dpsa_circulars")
+    .delete()
+    .not("year", "is", null);
+  if (error) throw new Error(`Could not reset imported circular history: ${error.message}`);
+  revalidatePath("/admin/jobs");
+}
+
 export async function updateJob(formData: FormData) {
   const supabase = await requireAdmin();
   const id = String(formData.get("id") ?? "");
