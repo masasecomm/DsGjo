@@ -4,22 +4,25 @@ import { updateJobStatus } from "@/app/actions";
 import { DeleteAllJobsButton } from "@/components/admin/delete-all-jobs-button";
 import { DeleteJobButton } from "@/components/admin/delete-job-button";
 import { DpsaCircularDiscovery } from "@/components/admin/dpsa-circular-discovery";
+import { JobPagination } from "@/components/job-pagination";
 import { requireAdmin } from "@/lib/admin";
 
 async function AdminJobsContent({
   searchParams,
 }: {
-  searchParams: Promise<{ imported?: string | string[] }>;
+  searchParams: Promise<{ imported?: string | string[]; page?: string | string[] }>;
 }) {
-  const { imported: importedParam } = await searchParams;
+  const { imported: importedParam, page: pageParam } = await searchParams;
   const importedCount = typeof importedParam === "string" ? Number(importedParam) : 0;
+  const requestedPage = Number(Array.isArray(pageParam) ? pageParam[0] : pageParam);
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const pageSize = 10;
   await connection();
   const supabase = await requireAdmin();
-  const [{ data, error }, { data: circularHistory, error: historyError }] = await Promise.all([
+  const [{ count: totalJobs, error }, { data: circularHistory, error: historyError }] = await Promise.all([
     supabase
       .from("jobs")
-      .select("id,title,slug,department,location,closing_date,description,application_url,status,created_at,updated_at")
-      .order("created_at", { ascending: false }),
+      .select("id", { count: "exact", head: true }),
     supabase
       .from("imported_dpsa_circulars")
       .select("year,circular_number,imported_at,job_count")
@@ -27,7 +30,16 @@ async function AdminJobsContent({
   ]);
   if (error) throw new Error(`Could not load vacancies: ${error.message}`);
   if (historyError) throw new Error(`Could not load DPSA circular history: ${historyError.message}`);
-  const jobs = data ?? [];
+  const vacancyCount = totalJobs ?? 0;
+  const pageCount = Math.max(1, Math.ceil(vacancyCount / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const { data: pageData, error: pageError } = await supabase
+    .from("jobs")
+    .select("id,title,slug,department,location,closing_date,description,application_url,status,created_at,updated_at")
+    .order("created_at", { ascending: false })
+    .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
+  if (pageError) throw new Error(`Could not load vacancies: ${pageError.message}`);
+  const jobs = pageData ?? [];
   const publishedCirculars = (circularHistory ?? []).map(({ year, circular_number, imported_at, job_count }) => ({
     year,
     number: circular_number,
@@ -47,10 +59,19 @@ async function AdminJobsContent({
       <DpsaCircularDiscovery initialPublishedCirculars={publishedCirculars} />
       <section className="admin-panel">
         <div className="admin-panel-heading">
-          <h2>All vacancies ({jobs.length})</h2>
-          <DeleteAllJobsButton count={jobs.length} />
+          <h2>All vacancies ({vacancyCount})</h2>
+          <DeleteAllJobsButton count={vacancyCount} />
         </div>
-        {jobs.length ? <table className="admin-table"><thead><tr><th>#</th><th>Title</th><th>Department</th><th>Status</th><th>Closing date</th><th>Actions</th></tr></thead><tbody>{jobs.map((job, index) => <tr key={job.id}><td>{index + 1}</td><td><a className="text-link" href={`/admin/jobs/${job.id}/edit`}>{job.title}</a><br /><small>/{job.slug}/</small></td><td>{job.department || "—"}</td><td><span className={`admin-status ${job.status}`}>{job.status}</span></td><td>{job.closing_date || "—"}</td><td>{job.status !== "published" && <form action={updateJobStatus}><input name="id" type="hidden" value={job.id} /><input name="status" type="hidden" value="published" /><button type="submit">Publish</button></form>}<DeleteJobButton id={job.id} title={job.title} /></td></tr>)}</tbody></table> : <p className="admin-empty">Imported vacancies will appear here.</p>}
+        {jobs.length ? <>
+          <p className="admin-subtitle">Showing {jobs.length} of {vacancyCount} vacancies · Page {currentPage} of {pageCount}</p>
+          <table className="admin-table"><thead><tr><th>#</th><th>Title</th><th>Department</th><th>Status</th><th>Closing date</th><th>Actions</th></tr></thead><tbody>{jobs.map((job, index) => <tr key={job.id}><td>{(currentPage - 1) * pageSize + index + 1}</td><td><a className="text-link" href={`/admin/jobs/${job.id}/edit`}>{job.title}</a><br /><small>/{job.slug}/</small></td><td>{job.department || "—"}</td><td><span className={`admin-status ${job.status}`}>{job.status}</span></td><td>{job.closing_date || "—"}</td><td>{job.status !== "published" && <form action={updateJobStatus}><input name="id" type="hidden" value={job.id} /><input name="status" type="hidden" value="published" /><button type="submit">Publish</button></form>}<DeleteJobButton id={job.id} title={job.title} /></td></tr>)}</tbody></table>
+          <JobPagination
+            page={currentPage}
+            totalItems={vacancyCount}
+            pageSize={pageSize}
+            hrefForPage={(pageNumber) => `/admin/jobs?page=${pageNumber}`}
+          />
+        </> : <p className="admin-empty">Imported vacancies will appear here.</p>}
       </section>
     </>
   );
@@ -59,7 +80,7 @@ async function AdminJobsContent({
 export default function AdminJobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ imported?: string | string[] }>;
+  searchParams: Promise<{ imported?: string | string[]; page?: string | string[] }>;
 }) {
   return (
     <Suspense fallback={<p className="admin-empty">Loading vacancies...</p>}>

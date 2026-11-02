@@ -7,6 +7,7 @@ import { connection } from "next/server";
 import { ArrowLeft, ArrowUpRight, Banknote, CalendarDays, MapPin, MessageCircle } from "lucide-react";
 import { CommentForm } from "@/components/comment-form";
 import { JobPagination } from "@/components/job-pagination";
+import { SearchHighlight } from "@/components/search-highlight";
 import { VacancyCard } from "@/components/vacancy-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -55,6 +56,10 @@ function cleanCopy(value: string) {
     .replace(/\bAccountability\b/g, "accountability")
     .replace(/[ \t]+/g, " ")
     .trim();
+}
+
+function sentenceLines(value: string) {
+  return cleanCopy(value).replace(/\.([ \t]+)(?=[A-Z])/g, ".\n");
 }
 
 function getDescriptionSections(description: string): Partial<Record<CopySection, string[]>> {
@@ -225,10 +230,10 @@ export default async function JobPage({
   searchParams,
 }: {
   params: Promise<{ slug: string[] }>;
-  searchParams: Promise<{ page?: string | string[] }>;
+  searchParams: Promise<{ page?: string | string[]; q?: string }>;
 }) {
   await connection();
-  const [{ slug }, { page: pageParam }] = await Promise.all([params, searchParams]);
+  const [{ slug }, { page: pageParam, q = "" }] = await Promise.all([params, searchParams]);
   const isLegacyJobsPath = slug[0] === "jobs";
   const circular = !isLegacyJobsPath && slug.length === 1 ? parseDpsaCircularSlug(slug[0]) : null;
   if (circular) {
@@ -487,18 +492,18 @@ export default async function JobPage({
               />
             </figure>
           )}
-          <span className="section-kicker">{job.department || "PUBLIC SERVICE VACANCY"}</span>
-          <h1>{job.title}</h1>
+          <span className="section-kicker"><SearchHighlight text={job.department || "PUBLIC SERVICE VACANCY"} query={q} /></span>
+          <h1><SearchHighlight text={job.title} query={q} /></h1>
           {salaryText && (
             <div className="vacancy-salary">
               <Banknote size={22} aria-hidden="true" />
-              <div><span>Salary or stipend</span><strong>{salaryDisplay}</strong></div>
+              <div><span>Salary or stipend</span><strong><SearchHighlight text={salaryDisplay} query={q} /></strong></div>
             </div>
           )}
-          <p className="vacancy-introduction">{introduction(job, employmentType, province)}</p>
+          <p className="vacancy-introduction"><SearchHighlight text={introduction(job, employmentType, province)} query={q} /></p>
           <div className="job-meta">
-            {(job.location || province) && <span><MapPin size={15} />{job.location || province}</span>}
-            {closingDateValue && <span><CalendarDays size={15} />Applications close {formatClosingDate(closingDateValue)}</span>}
+            {(job.location || province) && <span><MapPin size={15} aria-hidden="true" /><SearchHighlight text={job.location || province} query={q} /></span>}
+            {closingDateValue && <span><CalendarDays size={15} aria-hidden="true" /><SearchHighlight text={`Applications close ${formatClosingDate(closingDateValue)}`} query={q} /></span>}
           </div>
           {circularUrl && (
             <p className="vacancy-source">
@@ -508,42 +513,42 @@ export default async function JobPage({
           )}
           {roleFacts.length > 0 && (
             <dl className="vacancy-facts">
-              {roleFacts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{cleanCopy(value)}</dd></div>)}
+              {roleFacts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd><SearchHighlight text={cleanCopy(value)} query={q} /></dd></div>)}
             </dl>
           )}
           <div className="vacancy-copy">
-            {jobPurpose && <CopySectionView title="About the role"><p>{jobPurpose}</p></CopySectionView>}
-            {qualifications.length > 0 && <CopySectionView title="What you will need"><ul>{qualifications.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul></CopySectionView>}
-            {experienceCopy && <CopySectionView title="Experience"><p>{experienceCopy}</p></CopySectionView>}
-            {professionalRegistration && <CopySectionView title="Professional registration"><p>{professionalRegistration}</p></CopySectionView>}
-            {driversLicense && <CopySectionView title="Driver's licence"><p>{driversLicense}</p></CopySectionView>}
-            {skills.length > 0 && <CopySectionView title="Skills and competencies"><ul>{skills.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul></CopySectionView>}
-            {duties.length > 0 && <CopySectionView title="Key responsibilities"><ul>{duties.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul></CopySectionView>}
+            {jobPurpose && <CopySectionView title="About the role"><p><SearchHighlight text={sentenceLines(jobPurpose)} query={q} /></p></CopySectionView>}
+            {qualifications.length > 0 && <CopySectionView title="What you will need"><ul>{qualifications.map((item, index) => <li key={`${index}-${item}`}><SearchHighlight text={item} query={q} /></li>)}</ul></CopySectionView>}
+            {experienceCopy && <CopySectionView title="Experience"><p><SearchHighlight text={sentenceLines(experienceCopy)} query={q} /></p></CopySectionView>}
+            {professionalRegistration && <CopySectionView title="Professional registration"><p><SearchHighlight text={sentenceLines(professionalRegistration)} query={q} /></p></CopySectionView>}
+            {driversLicense && <CopySectionView title="Driver's licence"><p><SearchHighlight text={sentenceLines(driversLicense)} query={q} /></p></CopySectionView>}
+            {skills.length > 0 && <CopySectionView title="Skills and competencies"><ul>{skills.map((item, index) => <li key={`${index}-${item}`}><SearchHighlight text={item} query={q} /></li>)}</ul></CopySectionView>}
+            {duties.length > 0 && <CopySectionView title="Key responsibilities"><ul>{duties.map((item, index) => <li key={`${index}-${item}`}><SearchHighlight text={item} query={q} /></li>)}</ul></CopySectionView>}
             {(contractDuration || detailText(structuredDetails, "grade")) && (
               <CopySectionView title="Additional details">
                 <ul>
-                  {contractDuration && <li>Contract length: {contractDuration}</li>}
-                  {detailText(structuredDetails, "grade") && <li>Grade: {detailText(structuredDetails, "grade")}</li>}
+                  {contractDuration && <li><SearchHighlight text={`Contract length: ${contractDuration}`} query={q} /></li>}
+                  {detailText(structuredDetails, "grade") && <li><SearchHighlight text={`Grade: ${detailText(structuredDetails, "grade")}`} query={q} /></li>}
                 </ul>
               </CopySectionView>
             )}
             {(applicationInstructions || emails.length || methods.length || documents.length || enquiries || telephone) && (
               <CopySectionView title="How to apply">
-                {applicationSummary && <p>{applicationSummary}</p>}
+                {applicationSummary && <p><SearchHighlight text={sentenceLines(applicationSummary)} query={q} /></p>}
                 {(methods.length > 0 || emails.length > 0 || documents.length > 0 || enquiries || telephone) && (
                   <ul>
-                    {methods.map((item) => <li key={item}>Application method: {item}</li>)}
-                    {emails.map((item) => <li key={item}>Email: <a href={`mailto:${item}`}>{item}</a></li>)}
-                    {documents.length > 0 && <li>Documents to include: {documents.join(", ")}</li>}
-                    {enquiries && <li>Enquiries: {enquiries}</li>}
-                    {telephone && <li>Telephone: {telephone}</li>}
+                    {methods.map((item) => <li key={item}><SearchHighlight text={`Application method: ${item}`} query={q} /></li>)}
+                    {emails.map((item) => <li key={item}><SearchHighlight text="Email: " query={q} /><a href={`mailto:${item}`}><SearchHighlight text={item} query={q} /></a></li>)}
+                    {documents.length > 0 && <li><SearchHighlight text={`Documents to include: ${documents.join(", ")}`} query={q} /></li>}
+                    {enquiries && <li><SearchHighlight text={`Enquiries: ${enquiries}`} query={q} /></li>}
+                    {telephone && <li><SearchHighlight text={`Telephone: ${telephone}`} query={q} /></li>}
                   </ul>
                 )}
               </CopySectionView>
             )}
-            {notes.length > 0 && <CopySectionView title="Please note"><ul>{notes.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul></CopySectionView>}
+            {notes.length > 0 && <CopySectionView title="Please note"><ul>{notes.map((item, index) => <li key={`${index}-${item}`}><SearchHighlight text={item} query={q} /></li>)}</ul></CopySectionView>}
             {!jobPurpose && qualifications.length === 0 && !experienceRequirements && duties.length === 0 && skills.length === 0 && !applicationInstructions && (
-              <p>{cleanCopy(job.description.replace(/Circular PDF:\s*https?:\/\/\S+/gi, ""))}</p>
+              <p><SearchHighlight text={sentenceLines(job.description.replace(/Circular PDF:\s*https?:\/\/\S+/gi, ""))} query={q} /></p>
             )}
           </div>
           {isOpen && job.application_url && <a className="apply-link" href={job.application_url} rel="noreferrer" target="_blank">Go to application <ArrowUpRight size={17} /></a>}

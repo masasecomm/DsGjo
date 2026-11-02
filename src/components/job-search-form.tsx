@@ -64,35 +64,39 @@ export function JobSearchForm({
         </label>
         <label className="home-search-field">
           <MapPin size={21} aria-hidden="true" />
-          <select
-            aria-label="Province"
-            name="province"
-            onChange={(event) => {
-              setProvince(event.currentTarget.value);
-              setDepartment("");
-              setDepartmentError("");
-              setLoadingDepartments(true);
-            }}
-            value={province}
-          >
-            <option value="">All Provinces</option>
-            {provinces.map((name) => <option key={name} value={name}>{name}</option>)}
-          </select>
-          <ChevronDown size={16} aria-hidden="true" />
+          <span className="home-search-select">
+            <select
+              aria-label="Province"
+              name="province"
+              onChange={(event) => {
+                setProvince(event.currentTarget.value);
+                setDepartment("");
+                setDepartmentError("");
+                setLoadingDepartments(true);
+              }}
+              value={province}
+            >
+              <option value="">All Provinces</option>
+              {provinces.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+            <ChevronDown size={16} aria-hidden="true" />
+          </span>
         </label>
         <label className="home-search-field">
           <Building2 size={20} aria-hidden="true" />
-          <select
-            aria-label="Department"
-            disabled={loadingDepartments || Boolean(departmentError)}
-            name="department"
-            onChange={(event) => setDepartment(event.currentTarget.value)}
-            value={department}
-          >
-            <option value="">All Departments</option>
-            {departments.map((name) => <option key={name} value={name}>{name}</option>)}
-          </select>
-          <ChevronDown size={16} aria-hidden="true" />
+          <span className="home-search-select">
+            <select
+              aria-label="Department"
+              disabled={loadingDepartments || Boolean(departmentError)}
+              name="department"
+              onChange={(event) => setDepartment(event.currentTarget.value)}
+              value={department}
+            >
+              <option value="">All Departments</option>
+              {departments.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+            <ChevronDown size={16} aria-hidden="true" />
+          </span>
         </label>
         <button type="submit">Find Jobs <ArrowRight size={17} /></button>
         {departmentError && <span className="job-filter-error" role="alert">{departmentError}</span>}
