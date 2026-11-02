@@ -309,6 +309,8 @@ export async function POST(request: Request) {
       }
       revalidatePath("/");
       revalidatePath("/jobs");
+      revalidatePath("/sitemap.xml");
+      revalidatePath(`/dpsa-circular-${circular.number}-of-${circular.year}`);
       revalidatePath("/admin/jobs");
       return Response.json({ posted: jobs.length - skippedCount, skipped: skippedCount, processed: jobs.length });
     }
@@ -340,6 +342,8 @@ export async function POST(request: Request) {
 
       revalidatePath("/");
       revalidatePath("/jobs");
+      revalidatePath("/sitemap.xml");
+      revalidatePath(`/dpsa-circular-${circular.number}-of-${circular.year}`);
       revalidatePath("/admin/jobs");
       return Response.json({ posted: totalJobs, complete: true });
     }

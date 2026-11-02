@@ -334,6 +334,8 @@ export async function createJob(formData: FormData) {
   if (error) throw new Error(`Could not create vacancy: ${error.message}`);
   revalidatePath("/");
   revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
+  revalidatePath("/admin/jobs");
   redirect("/admin/jobs");
 }
 
@@ -346,6 +348,7 @@ export async function createImportedJobs(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/admin/jobs");
   redirect(`/admin/jobs?imported=${inserts.length}`);
 }
@@ -362,6 +365,7 @@ export async function updateJobStatus(formData: FormData) {
   if (error) throw new Error(`Could not update vacancy: ${error.message}`);
   revalidatePath("/");
   revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/admin/jobs");
 }
 
@@ -382,7 +386,22 @@ export async function deleteJob(formData: FormData) {
   if (error) throw new Error(`Could not permanently delete vacancy: ${error.message}`);
   revalidatePath("/");
   revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
   revalidatePath(`/${job.slug}`);
+  revalidatePath("/admin/jobs");
+}
+
+export async function deleteAllJobs(formData: FormData) {
+  const supabase = await requireAdmin();
+  if (formData.get("confirmation") !== "DELETE ALL") {
+    throw new Error("Confirm the exact delete-all phrase before deleting vacancies.");
+  }
+
+  const { error } = await supabase.from("jobs").delete().not("id", "is", null);
+  if (error) throw new Error(`Could not permanently delete all vacancies: ${error.message}`);
+  revalidatePath("/");
+  revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/admin/jobs");
 }
 
@@ -415,6 +434,7 @@ export async function updateJob(formData: FormData) {
   if (error) throw new Error(`Could not update vacancy: ${error.message}`);
   revalidatePath("/");
   revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/admin/jobs");
   redirect("/admin/jobs");
 }

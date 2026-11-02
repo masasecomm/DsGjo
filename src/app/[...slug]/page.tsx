@@ -6,10 +6,11 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { connection } from "next/server";
 import { ArrowLeft, ArrowUpRight, Banknote, CalendarDays, MapPin, MessageCircle } from "lucide-react";
 import { CommentForm } from "@/components/comment-form";
+import { JobPagination } from "@/components/job-pagination";
 import { VacancyCard } from "@/components/vacancy-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { getApprovedComments, getPublishedCircularJobs, getPublishedJob, isCircularJob, isJobOpen } from "@/lib/jobs";
+import { getApprovedComments, getPublishedCircularJobPage, getPublishedJob, isCircularJob, isJobOpen } from "@/lib/jobs";
 import { getDpsaCircularSlug, parseDpsaCircularSlug } from "@/lib/job-slugs";
 import type { Job } from "@/lib/jobs";
 
@@ -221,15 +222,25 @@ export async function generateMetadata({
 
 export default async function JobPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string[] }>;
+  searchParams: Promise<{ page?: string | string[] }>;
 }) {
   await connection();
-  const { slug } = await params;
+  const [{ slug }, { page: pageParam }] = await Promise.all([params, searchParams]);
   const isLegacyJobsPath = slug[0] === "jobs";
   const circular = !isLegacyJobsPath && slug.length === 1 ? parseDpsaCircularSlug(slug[0]) : null;
   if (circular) {
-    const jobs = await getPublishedCircularJobs(circular.year, circular.number);
+    const requestedPage = Number(Array.isArray(pageParam) ? pageParam[0] : pageParam);
+    const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    let result = await getPublishedCircularJobPage(circular.year, circular.number, page);
+    const pageCount = Math.max(1, Math.ceil(result.total / 10));
+    const currentPage = Math.min(page, pageCount);
+    if (currentPage !== page) {
+      result = await getPublishedCircularJobPage(circular.year, circular.number, currentPage);
+    }
+    const jobs = result.jobs;
     if (!jobs.length) notFound();
 
     return (
@@ -242,8 +253,17 @@ export default async function JobPage({
             <p>Current vacancies published in this circular.</p>
           </section>
           <section className="page-content">
-            <p className="admin-subtitle">{jobs.length} {jobs.length === 1 ? "opportunity" : "opportunities"}</p>
+            <p className="admin-subtitle">
+              {result.total} {result.total === 1 ? "opportunity" : "opportunities"}
+              {result.total > 0 ? ` · Page ${currentPage} of ${pageCount}` : ""}
+            </p>
             <div className="list-grid">{jobs.map((job) => <VacancyCard job={job} key={job.id} />)}</div>
+            <JobPagination
+              page={currentPage}
+              totalItems={result.total}
+              pageSize={10}
+              hrefForPage={(pageNumber) => `/${slug[0]}?page=${pageNumber}`}
+            />
           </section>
         </main>
         <SiteFooter />

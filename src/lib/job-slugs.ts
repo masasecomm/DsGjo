@@ -23,6 +23,8 @@ export function parseDpsaCircularSlug(slug: string) {
 export function getJobSlug(title: string, description: string, sourceUrl = "", reference = "") {
   const circularSlug = getDpsaCircularSlug(`${description} ${sourceUrl}`) ?? "dpsa-circular";
   const titleSlug = slugify(title).slice(0, 100) || "vacancy";
-  const referenceSlug = slugify(reference).slice(0, 40);
-  return `${circularSlug}/${titleSlug}-ref${referenceSlug ? `-${referenceSlug}` : ""}`;
+  const referenceSlug = slugify(reference
+    .replace(/^\s*ref(?:erence)?(?=\s|[:#-]|\d)\s*(?:no\.?|number)?\s*[:#-]?\s*/i, ""))
+    .slice(0, 40);
+  return `${circularSlug}/${titleSlug}${referenceSlug ? `-${referenceSlug}` : ""}`;
 }

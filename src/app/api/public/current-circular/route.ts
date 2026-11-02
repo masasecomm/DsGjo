@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { getLatestPublishedCircular } from "@/lib/jobs";
+import { getPublishedCirculars } from "@/lib/jobs";
 
 export async function GET() {
-  const circular = await getLatestPublishedCircular();
-  return NextResponse.json({ circular });
+  const circulars = await getPublishedCirculars();
+  return NextResponse.json(
+    { circulars },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
 }

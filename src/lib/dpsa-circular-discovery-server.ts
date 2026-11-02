@@ -68,11 +68,10 @@ export async function getRecentDpsaCirculars(supabase: SupabaseClient<Database>)
     throw new Error("No vacancy circulars were found on the official DPSA listing.");
   }
 
-  const years = [...new Set(candidates.map((circular) => circular.year))];
   const { data: imported, error } = await supabase
     .from("imported_dpsa_circulars")
-    .select("year,circular_number")
-    .in("year", years);
+    .select("year,circular_number,imported_at,job_count")
+    .order("imported_at", { ascending: false });
   if (error) {
     throw new Error(`Could not check which DPSA circulars were imported. Apply the circular-tracking database migration, then try again. ${error.message}`);
   }
@@ -115,6 +114,12 @@ export async function getRecentDpsaCirculars(supabase: SupabaseClient<Database>)
 
   return {
     circulars,
+    publishedCirculars: (imported ?? []).map(({ year, circular_number, imported_at, job_count }) => ({
+      year,
+      number: circular_number,
+      importedAt: imported_at,
+      jobCount: job_count,
+    })),
     checkedAt: new Date().toISOString(),
   };
 }

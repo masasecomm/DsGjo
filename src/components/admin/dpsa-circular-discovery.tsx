@@ -23,6 +23,13 @@ type PublishProgress = {
   complete: boolean;
 };
 
+type PublishedCircularHistory = {
+  year: number;
+  number: number;
+  importedAt: string;
+  jobCount: number;
+};
+
 type ImportResponse = {
   existingCount?: number;
   posted?: number;
@@ -44,6 +51,15 @@ function isDpsaCircular(value: unknown): value is DpsaCircular {
     && typeof circular.pdfUrl === "string";
 }
 
+function isPublishedCircularHistory(value: unknown): value is PublishedCircularHistory {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const circular = value as Record<string, unknown>;
+  return Number.isInteger(circular.year)
+    && Number.isInteger(circular.number)
+    && typeof circular.importedAt === "string"
+    && Number.isInteger(circular.jobCount);
+}
+
 function PublishAllButton({ count, pending, complete, completed, disabled }: {
   count: number;
   pending: boolean;
@@ -61,6 +77,27 @@ function PublishAllButton({ count, pending, complete, completed, disabled }: {
             ? `Retry remaining ${count - completed}`
             : `Publish all ${count} ${count === 1 ? "vacancy" : "vacancies"}`}
     </button>
+  );
+}
+
+function PublishProgressView({ progress, label }: { progress: PublishProgress; label: string }) {
+  const remaining = Math.max(0, progress.total - progress.completed);
+  return (
+    <div className="circular-publish-progress" role="status" aria-live="polite">
+      <div className="circular-publish-progress-label">
+        <span>{progress.completed - progress.skipped} posted or rewritten</span>
+        <span>{remaining} remaining</span>
+      </div>
+      {progress.skipped > 0 && <span>{progress.skipped} skipped</span>}
+      <progress aria-label={`Publishing ${label}`} max={progress.total} value={progress.completed} />
+      {!progress.complete && (
+        <span>
+          Estimated time remaining: {progress.estimatedMilliseconds === null
+            ? "calculating..."
+            : formatRemainingTime(progress.estimatedMilliseconds)}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -102,8 +139,13 @@ function withoutKey<T>(values: Record<string, T>, key: string): Record<string, T
   return updated;
 }
 
-export function DpsaCircularDiscovery() {
+export function DpsaCircularDiscovery({
+  initialPublishedCirculars,
+}: {
+  initialPublishedCirculars: PublishedCircularHistory[];
+}) {
   const [circulars, setCirculars] = useState<DpsaCircular[]>([]);
+  const [publishedCirculars, setPublishedCirculars] = useState(initialPublishedCirculars);
   const [parsedCirculars, setParsedCirculars] = useState<ParsedCircular[]>([]);
   const [isChecking, setIsChecking] = useState(false);
   const [parsingKey, setParsingKey] = useState("");
@@ -129,6 +171,7 @@ export function DpsaCircularDiscovery() {
       }
       const result = await response.json() as {
         circulars?: unknown;
+        publishedCirculars?: unknown;
         checkedAt?: unknown;
         error?: unknown;
       };
@@ -140,10 +183,13 @@ export function DpsaCircularDiscovery() {
       if (
         !Array.isArray(result.circulars)
         || !result.circulars.every(isDpsaCircular)
+        || !Array.isArray(result.publishedCirculars)
+        || !result.publishedCirculars.every(isPublishedCircularHistory)
         || typeof result.checkedAt !== "string"
       ) throw new Error("The DPSA circular checker returned invalid data.");
 
       setCirculars(result.circulars);
+      setPublishedCirculars(result.publishedCirculars);
       setCheckedAt(result.checkedAt);
       setMessage(result.circulars.length
         ? `Found ${result.circulars.length} recent unimported circular${result.circulars.length === 1 ? "" : "s"}.`
@@ -184,9 +230,7 @@ export function DpsaCircularDiscovery() {
         circular,
         vacancies: parsed,
       };
-      setParsedCirculars((current) => [...current.filter((item) =>
-        item.circular.year !== circular.year || item.circular.number !== circular.number,
-      ), parsedCircular]);
+      setParsedCirculars([parsedCircular]);
       setPublishProgress((current) => current?.key === key ? null : current);
       setExistingCounts((current) => withoutKey(current, key));
       setConflictPolicies((current) => withoutKey(current, key));
@@ -304,6 +348,23 @@ export function DpsaCircularDiscovery() {
       {error && <p className="circular-message error" role="alert">{error}</p>}
       {message && <p className="circular-message" role="status">{message}</p>}
 
+      {publishedCirculars.length > 0 && (
+        <section className="circular-history" aria-labelledby="circular-history-heading">
+          <h3 id="circular-history-heading">Imported circular history</h3>
+          <div className="circular-discovery-list">
+            {publishedCirculars.map((circular) => (
+              <article className="circular-discovery-card" key={`${circular.year}-${circular.number}`}>
+                <div>
+                  <strong>DPSA Circular {circular.number} of {circular.year}</strong>
+                  <span>{circular.jobCount} vacancies originally imported</span>
+                </div>
+                <span className="admin-status published">Published</span>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
       {circulars.length > 0 && (
         <div className="circular-discovery-list">
           {circulars.map((circular) => {
@@ -365,7 +426,6 @@ export function DpsaCircularDiscovery() {
         }));
         const key = `${circular.year}-${circular.number}`;
         const currentProgress = publishProgress?.key === key ? publishProgress : null;
-        const remaining = currentProgress ? Math.max(0, currentProgress.total - currentProgress.completed) : 0;
         const existingCount = existingCounts[key];
         const conflictPolicy = conflictPolicies[key];
         return (
@@ -379,6 +439,20 @@ export function DpsaCircularDiscovery() {
                 <h3>{circular.label}: parsed vacancies</h3>
                 <span>{vacancies.length} vacancies ready to publish</span>
               </div>
+            </div>
+            <div className="circular-publish-progress-top">
+              <div className="circular-save-row circular-save-row-top">
+                <span>Publish all {vacancies.length} vacancies in quick, small batches.</span>
+                <PublishAllButton
+                  complete={Boolean(currentProgress?.complete)}
+                  completed={currentProgress?.completed ?? 0}
+                  count={vacancies.length}
+                  disabled={(Boolean(publishingKey) && publishingKey !== key)
+                    || (typeof existingCount === "number" && existingCount > 0 && !conflictPolicy)}
+                  pending={publishingKey === key}
+                />
+              </div>
+              {currentProgress && <PublishProgressView label={circular.label} progress={currentProgress} />}
             </div>
             <div className="circular-sheet-scroll">
               <table className="circular-sheet">
@@ -450,25 +524,7 @@ export function DpsaCircularDiscovery() {
               </fieldset>
             )}
             {currentProgress && (
-              <div className="circular-publish-progress" role="status" aria-live="polite">
-                <div className="circular-publish-progress-label">
-                  <span>{currentProgress.completed - currentProgress.skipped} posted or rewritten</span>
-                  <span>{remaining} remaining</span>
-                </div>
-                {currentProgress.skipped > 0 && <span>{currentProgress.skipped} skipped</span>}
-                <progress
-                  aria-label={`Publishing ${circular.label}`}
-                  max={currentProgress.total}
-                  value={currentProgress.completed}
-                />
-                {!currentProgress.complete && !publishErrors[key] && (
-                  <span>
-                    Estimated time remaining: {currentProgress.estimatedMilliseconds === null
-                      ? "calculating..."
-                      : formatRemainingTime(currentProgress.estimatedMilliseconds)}
-                  </span>
-                )}
-              </div>
+              <PublishProgressView label={circular.label} progress={currentProgress} />
             )}
             {publishErrors[key] && <p className="circular-message error" role="alert">{publishErrors[key]}</p>}
           </form>

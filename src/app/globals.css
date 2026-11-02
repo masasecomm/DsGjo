@@ -31,6 +31,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .main-nav { display: flex; align-items: center; gap: 34px; font-size: 13px; font-weight: 600; color: #f4f7ff; }
 .main-nav .nav-home { display: inline-flex; align-items: center; gap: 5px; }
 .main-nav a:hover, .footer-admin:hover { color: #ffc43c; }
+.main-nav-circulars { position: relative; }
+.main-nav-circulars summary { cursor: pointer; list-style: none; }
+.main-nav-circulars summary::-webkit-details-marker { display: none; }
+.main-nav-circular-list { position: absolute; top: calc(100% + 15px); left: -14px; display: grid; width: max-content; min-width: 230px; max-height: min(65vh, 430px); gap: 2px; overflow-y: auto; padding: 8px; border: 1px solid rgba(23,35,31,.1); border-radius: 9px; color: var(--ink); background: #fff; box-shadow: 0 12px 32px rgba(20,35,30,.18); }
+.main-nav-circular-list a { padding: 10px 12px; border-radius: 6px; font-size: 12px; }
+.main-nav-circular-list a:hover { color: var(--green); background: #f1f5f2; }
 .mobile-nav-toggle { display: none; }
 
 .hero { position: relative; overflow: hidden; min-height: 570px; padding: 86px max(6.1vw, 24px) 0; color: #fff; background: var(--green-dark); }
@@ -79,6 +85,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .province-filter { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; padding: 0 23px; border: 1px solid transparent; border-radius: 11px; color: #28323c; background: #eff3f5; font-size: 15px; transition: background .16s ease, box-shadow .16s ease; }
 .province-filter:hover { background: #e5ebee; }
 .province-filter.is-active { border-color: #e8edf0; background: #fff; box-shadow: 0 6px 18px rgba(23,35,31,.06); }
+.province-filter { font-size: 13px; font-weight: 700; white-space: nowrap; text-transform: uppercase; }
+.job-pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin: 30px 0 0; }
+.job-pagination a { display: inline-grid; min-width: 38px; min-height: 38px; place-items: center; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--green); background: #fff; font-size: 12px; font-weight: 700; }
+.job-pagination a:hover, .job-pagination a.is-current { border-color: var(--green); color: #fff; background: var(--green); }
+.job-filter-error { grid-column: 1 / -1; flex-basis: 100%; color: #9c3d35; font-size: 11px; }
 .vacancy-card { display: grid; min-width: 0; min-height: 188px; grid-template-columns: 60px minmax(0, 1fr); align-content: center; align-items: start; gap: 22px; padding: 24px 30px; border: 1px solid #e6eaf0; border-radius: 11px; background: #fff; transition: box-shadow .18s ease, transform .18s ease; }
 .vacancy-card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(26,52,94,.07); }
 .vacancy-card-icon { display: grid; width: 60px; height: 60px; flex: 0 0 auto; place-items: center; border-radius: 11px; color: #fff; background: #2193e9; }
@@ -382,6 +393,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .stat-card b { display: block; margin-top: 9px; color: #17499e; font-size: 28px; font-weight: 600; }
 .admin-panel { margin-bottom: 18px; padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow-x: auto; }
 .admin-panel h2 { margin: 0 0 15px; font-size: 21px; font-weight: 500; }
+.admin-panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-panel-heading h2 { margin-bottom: 15px; }
+.admin-panel-heading form { margin: 0 0 15px; }
+.admin-panel-heading .danger { padding: 8px 11px; border: 0; border-radius: 6px; color: #9c3d35; background: #f8ecea; font-size: 10px; font-weight: 700; cursor: pointer; }
 .admin-table { width: 100%; border-collapse: collapse; font-size: 11px; }
 .admin-table th { padding: 10px 8px; color: var(--muted); text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid var(--line); }
 .admin-table td { padding: 12px 8px; border-bottom: 1px solid #edf1f5; vertical-align: top; }
@@ -389,6 +404,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .admin-table form { display: inline-flex; gap: 6px; }
 .admin-table button, .admin-action { border: 0; border-radius: 6px; padding: 7px 9px; background: #edf7ff; color: #0077ce; font-size: 10px; font-weight: 700; cursor: pointer; }
 .admin-table button.danger { background: #f8ecea; color: #9c3d35; }
+.job-edit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
+.job-edit-actions form { margin: 0; }
+.job-edit-actions .danger { min-height: 43px; padding: 0 15px; border: 0; border-radius: 6px; color: #9c3d35; background: #f8ecea; font-size: 11px; font-weight: 700; cursor: pointer; }
 .admin-status { display: inline-block; padding: 4px 7px; border-radius: 20px; font-size: 9px; background: #edf7ff; color: #345b7a; }
 .admin-status.published, .admin-status.approved { background: #e0f1ff; color: #0069b8; }
 .admin-status.draft, .admin-status.pending { background: #fff3d4; color: #806b2b; }
@@ -704,6 +722,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .main-nav.is-open, .home-page .main-nav.is-open { display: flex; flex-direction: column; }
   .home-page .main-nav.is-open { border-color: rgba(255,255,255,.18); color: #fff; background: #17499e; }
   .main-nav a, .home-page .main-nav a { min-height: 46px; display: flex; align-items: center; gap: 9px; padding: 0 13px; border-radius: 9px; }
+  .main-nav-circulars { width: 100%; }
+  .main-nav-circulars summary { display: flex; min-height: 46px; align-items: center; padding: 0 13px; border-radius: 9px; }
+  .main-nav-circular-list { position: static; width: 100%; max-height: 260px; gap: 0; padding: 4px 6px 7px 14px; border: 0; border-radius: 0; color: inherit; background: transparent; box-shadow: none; }
+  .main-nav-circular-list a, .main-nav.is-open .main-nav-circular-list a { min-height: 38px; padding: 8px 10px; font-size: 12px; }
+  .main-nav.is-open .main-nav-circular-list a:hover { color: var(--green); background: #f1f5f2; }
+  .home-page .main-nav.is-open .main-nav-circular-list a:hover { color: #fff; background: rgba(255,255,255,.12); }
   .main-nav a:hover, .home-page .main-nav a:hover { color: var(--green); background: #f1f5f2; text-decoration: none; }
   .home-page .main-nav a:hover { color: #fff; background: rgba(255,255,255,.12); }
   .home-hero { min-height: 0; padding: 105px 20px 34px; border-radius: 0 0 25px 25px; }
@@ -782,6 +806,8 @@ body :is(
 .circular-import-intro { max-width: 760px; margin: -4px 0 16px; color: var(--muted); font-size: 11px; line-height: 1.65; }
 .circular-import-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .circular-discovery-list { display: grid; gap: 8px; margin-top: 15px; }
+.circular-history { margin-top: 22px; }
+.circular-history h3 { margin: 0; font-size: 14px; }
 .circular-discovery-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
 .circular-discovery-card > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .circular-discovery-card strong { color: var(--ink); font-size: 11px; }
@@ -813,6 +839,8 @@ body :is(
 .circular-sheet-number { width: 38px; color: var(--muted); text-align: right !important; }
 .circular-sheet-details { min-width: 280px; max-width: 420px; white-space: pre-wrap; line-height: 1.5; }
 .circular-save-row { flex-wrap: wrap; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line); }
+.circular-save-row-top { margin-top: 0; padding: 13px 0; border-top: 0; border-bottom: 1px solid var(--line); }
+.circular-publish-progress-top { margin: 0 0 12px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
 .circular-save-row .form-button:disabled { cursor: not-allowed; opacity: .5; }
 .circular-conflict-policy { display: grid; gap: 9px; margin: 12px 0 0; padding: 12px; border: 1px solid #dfe3d9; border-radius: 5px; color: var(--ink); font-size: 11px; }
 .circular-conflict-policy legend { padding: 0 5px; color: var(--muted); font-weight: 700; }

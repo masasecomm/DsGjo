@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { updateJobStatus } from "@/app/actions";
+import { DeleteAllJobsButton } from "@/components/admin/delete-all-jobs-button";
 import { DeleteJobButton } from "@/components/admin/delete-job-button";
 import { DpsaCircularDiscovery } from "@/components/admin/dpsa-circular-discovery";
 import { requireAdmin } from "@/lib/admin";
@@ -14,12 +15,25 @@ async function AdminJobsContent({
   const importedCount = typeof importedParam === "string" ? Number(importedParam) : 0;
   await connection();
   const supabase = await requireAdmin();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("id,title,slug,department,location,closing_date,description,application_url,status,created_at,updated_at")
-    .order("created_at", { ascending: false });
+  const [{ data, error }, { data: circularHistory, error: historyError }] = await Promise.all([
+    supabase
+      .from("jobs")
+      .select("id,title,slug,department,location,closing_date,description,application_url,status,created_at,updated_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("imported_dpsa_circulars")
+      .select("year,circular_number,imported_at,job_count")
+      .order("imported_at", { ascending: false }),
+  ]);
   if (error) throw new Error(`Could not load vacancies: ${error.message}`);
+  if (historyError) throw new Error(`Could not load DPSA circular history: ${historyError.message}`);
   const jobs = data ?? [];
+  const publishedCirculars = (circularHistory ?? []).map(({ year, circular_number, imported_at, job_count }) => ({
+    year,
+    number: circular_number,
+    importedAt: imported_at,
+    jobCount: job_count,
+  }));
 
   return (
     <>
@@ -30,10 +44,13 @@ async function AdminJobsContent({
           {importedCount} {importedCount === 1 ? "vacancy was" : "vacancies were"} published successfully.
         </div>
       )}
-      <DpsaCircularDiscovery />
+      <DpsaCircularDiscovery initialPublishedCirculars={publishedCirculars} />
       <section className="admin-panel">
-        <h2>All vacancies ({jobs.length})</h2>
-        {jobs.length ? <table className="admin-table"><thead><tr><th>Title</th><th>Department</th><th>Status</th><th>Closing date</th><th>Actions</th></tr></thead><tbody>{jobs.map((job) => <tr key={job.id}><td><a className="text-link" href={`/admin/jobs/${job.id}/edit`}>{job.title}</a><br /><small>/{job.slug}/</small></td><td>{job.department || "—"}</td><td><span className={`admin-status ${job.status}`}>{job.status}</span></td><td>{job.closing_date || "—"}</td><td>{job.status !== "published" && <form action={updateJobStatus}><input name="id" type="hidden" value={job.id} /><input name="status" type="hidden" value="published" /><button type="submit">Publish</button></form>}<DeleteJobButton id={job.id} title={job.title} /></td></tr>)}</tbody></table> : <p className="admin-empty">Imported vacancies will appear here.</p>}
+        <div className="admin-panel-heading">
+          <h2>All vacancies ({jobs.length})</h2>
+          <DeleteAllJobsButton count={jobs.length} />
+        </div>
+        {jobs.length ? <table className="admin-table"><thead><tr><th>#</th><th>Title</th><th>Department</th><th>Status</th><th>Closing date</th><th>Actions</th></tr></thead><tbody>{jobs.map((job, index) => <tr key={job.id}><td>{index + 1}</td><td><a className="text-link" href={`/admin/jobs/${job.id}/edit`}>{job.title}</a><br /><small>/{job.slug}/</small></td><td>{job.department || "—"}</td><td><span className={`admin-status ${job.status}`}>{job.status}</span></td><td>{job.closing_date || "—"}</td><td>{job.status !== "published" && <form action={updateJobStatus}><input name="id" type="hidden" value={job.id} /><input name="status" type="hidden" value="published" /><button type="submit">Publish</button></form>}<DeleteJobButton id={job.id} title={job.title} /></td></tr>)}</tbody></table> : <p className="admin-empty">Imported vacancies will appear here.</p>}
       </section>
     </>
   );

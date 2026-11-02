@@ -2,21 +2,17 @@ import Link from "next/link";
 import {
   ArrowRight,
   BriefcaseBusiness,
-  Building2,
-  ChevronDown,
-  MapPin,
-  Search,
 } from "lucide-react";
 import { connection } from "next/server";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ProvinceFilters } from "@/components/province-filters";
+import { JobSearchForm } from "@/components/job-search-form";
 import { VacancyCard } from "@/components/vacancy-card";
 import {
+  getPublishedJobFacets,
   getPopularJobSearches,
-  getPublishedDepartments,
   getPublishedJobs,
-  getPublishedProvinces,
 } from "@/lib/jobs";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -24,10 +20,9 @@ export const instant = false;
 
 export default async function Home() {
   await connection();
-  const [jobs, provinces, departments, popularSearches] = await Promise.all([
+  const [jobs, facets, popularSearches] = await Promise.all([
     getPublishedJobs(6),
-    getPublishedProvinces(),
-    getPublishedDepartments(100),
+    getPublishedJobFacets(),
     getPopularJobSearches(5),
   ]);
 
@@ -42,29 +37,7 @@ export default async function Home() {
             <div className="home-hero-copy">
               <h1>Popular Searches</h1>
               <p>Find government vacancies by job title, province or department.</p>
-              <form action="/jobs" className="home-search">
-                <label className="home-search-field home-search-keywords">
-                  <Search size={21} aria-hidden="true" />
-                  <input aria-label="Job title or keywords" name="q" placeholder="Job title, keywords..." />
-                </label>
-                <label className="home-search-field">
-                  <MapPin size={21} aria-hidden="true" />
-                  <select aria-label="Province" name="province" defaultValue="">
-                    <option value="">All Provinces</option>
-                    {provinces.map((province) => <option key={province} value={province}>{province}</option>)}
-                  </select>
-                  <ChevronDown size={16} aria-hidden="true" />
-                </label>
-                <label className="home-search-field">
-                  <Building2 size={20} aria-hidden="true" />
-                  <select aria-label="Department" name="department" defaultValue="">
-                    <option value="">All Departments</option>
-                    {departments.map((department) => <option key={department} value={department}>{department}</option>)}
-                  </select>
-                  <ChevronDown size={16} aria-hidden="true" />
-                </label>
-                <button type="submit">Find Jobs <ArrowRight size={17} /></button>
-              </form>
+              <JobSearchForm variant="home" provinces={facets.provinces.map(({ name }) => name)} departments={facets.departments} />
               <div className="home-popular-searches">
                 <strong>Popular Searches:</strong>
                 {popularSearches.length ? popularSearches.map(({ search_term }) => (
@@ -85,7 +58,7 @@ export default async function Home() {
             <Link href="/jobs" className="home-text-link">Browse all vacancies <ArrowRight size={16} /></Link>
           </div>
           {!isSupabaseConfigured() && <div className="home-setup-notice">Connect your Supabase project and publish vacancies from the admin dashboard to show live listings here.</div>}
-          <ProvinceFilters provinces={provinces} />
+          <ProvinceFilters provinces={facets.provinces} totalCount={facets.total} />
           <div className="home-job-grid">
             {jobs.length > 0 ? jobs.map((job) => (
               <VacancyCard job={job} key={job.id} />
