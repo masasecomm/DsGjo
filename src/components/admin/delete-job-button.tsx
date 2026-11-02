@@ -10,7 +10,7 @@ export function DeleteJobButton({ id, title }: { id: string; title: string }) {
       }
     }}>
       <input name="id" type="hidden" value={id} />
-      <button className="danger" type="submit">Delete</button>
+      <button className="danger" type="submit">Delete post</button>
     </form>
   );
 }

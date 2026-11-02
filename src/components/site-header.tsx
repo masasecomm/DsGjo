@@ -14,11 +14,7 @@ function isPublishedCircular(value: unknown): value is PublishedCircular {
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [circular, setCircular] = useState<PublishedCircular | null>(null);
-  const circularTitle = circular ? `DPSA CIRCULAR ${circular.number} of ${circular.year}` : "";
-  const circularHref = circular
-    ? `/dpsa-circular-${circular.number}-of-${circular.year}`
-    : "/jobs";
+  const [circulars, setCirculars] = useState<PublishedCircular[]>([]);
 
   useEffect(() => {
     const updateScrollState = () => setScrolled(window.scrollY > 24);
@@ -35,14 +31,14 @@ export function SiteHeader() {
         if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
 
         const payload: unknown = await response.json();
-        if (!payload || typeof payload !== "object" || !("circular" in payload)) {
+        if (!payload || typeof payload !== "object" || !("circulars" in payload)) {
           throw new Error("The current circular response was invalid.");
         }
-        const result = payload.circular;
-        if (result !== null && !isPublishedCircular(result)) {
+        const result = payload.circulars;
+        if (!Array.isArray(result) || !result.every(isPublishedCircular)) {
           throw new Error("The current circular response was invalid.");
         }
-        setCircular(result);
+        setCirculars(result);
       } catch (error) {
         if (!controller.signal.aborted) {
           console.error("Could not load the current published DPSA circular.", error);
@@ -78,9 +74,22 @@ export function SiteHeader() {
       </button>
       <nav id="main-navigation" className={`main-nav${menuOpen ? " is-open" : ""}`} aria-label="Main navigation">
         <Link href="/" className="nav-home" onClick={() => setMenuOpen(false)}><House size={16} aria-hidden="true" />Home</Link>
-        <Link href={circularHref} aria-label={circular ? `${circularTitle} vacancies` : "Circular vacancies"} onClick={() => setMenuOpen(false)}>
-          {circular ? `DPSA Circular ${circular.number}` : "Circular"}
-        </Link>
+        {circulars.length > 0 && (
+          <details className="main-nav-circulars">
+            <summary>Circulars</summary>
+            <div className="main-nav-circular-list">
+              {circulars.map((circular) => (
+                <Link
+                  href={`/dpsa-circular-${circular.number}-of-${circular.year}`}
+                  key={`${circular.year}-${circular.number}`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  DPSA Circular {circular.number} of {circular.year}
+                </Link>
+              ))}
+            </div>
+          </details>
+        )}
         <Link href="/jobs#provinces" onClick={() => setMenuOpen(false)}>Province</Link>
         <Link href="/contact" onClick={() => setMenuOpen(false)}>Contact</Link>
       </nav>

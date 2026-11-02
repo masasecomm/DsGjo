@@ -1,12 +1,18 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { getDpsaCircularSlug } from "@/lib/job-slugs";
+import { getDpsaCircularSlug, parseDpsaCircularSlug } from "@/lib/job-slugs";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type PublishedCircular = {
   year: number;
   number: number;
+};
+export type PublishedJobFacets = {
+  total: number;
+  provinces: Array<{ name: string; count: number }>;
+  departments: string[];
+  departmentsByProvince: Record<string, string[]>;
 };
 export type PublicComment = Pick<
   Database["public"]["Tables"]["comments"]["Row"],
@@ -53,8 +59,8 @@ export function getVacancyFact(description: string, ...labels: string[]) {
   return description.match(new RegExp(`\\b(?:${labelPattern})\\s*:\\s*([^•|\\r\\n]+)`, "i"))?.[1]?.trim() ?? "";
 }
 
-export function getJobProvince(job: Pick<Job, "location" | "description">) {
-  const candidate = getVacancyFact(job.description, "province") || job.location?.trim() || "";
+export function getJobProvince(job: Pick<Job, "location" | "description"> & Partial<Pick<Job, "province">>) {
+  const candidate = job.province?.trim() || getVacancyFact(job.description, "province") || job.location?.trim() || "";
   return southAfricanProvinces.find((province) => province.toLowerCase() === candidate.toLowerCase()) ?? "";
 }
 
@@ -80,95 +86,151 @@ export type JobSearchFilters = {
   department?: string;
 };
 
+function getPublicJobsFilter(today: string, search: string | undefined, filters: JobSearchFilters) {
+  const conditions = [`or(closing_date.is.null,closing_date.gte.${today})`];
+  if (filters.province) {
+    const province = southAfricanProvinces.find((name) =>
+      name.toLowerCase() === filters.province?.trim().toLowerCase(),
+    );
+    if (province) {
+      conditions.push(
+        `or(province.eq."${province}",location.eq."${province}",description.ilike."%Province: ${province}%")`,
+      );
+    }
+  }
+  if (search?.trim()) {
+    const term = search.trim().replace(/[^a-z0-9\s-]/gi, " ").replace(/\s+/g, " ").slice(0, 80).trim();
+    if (term) {
+      conditions.push(`or(${["title", "department", "location", "description"]
+        .map((column) => `${column}.ilike."%${term}%"`)
+        .join(",")})`);
+    }
+  }
+  return `and(${conditions.join(",")})`;
+}
+
 export async function getPublishedJobs(limit = 100, search?: string, filters: JobSearchFilters = {}) {
   if (!isSupabaseConfigured()) return [];
 
   const supabase = await createSupabaseServerClient();
   const today = getSouthAfricanDate();
-  let query = supabase
-    .from("jobs")
-    .select("id,title,slug,department,location,closing_date,description,application_url,status,created_at,updated_at")
-    .eq("status", "published")
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  const jobs: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    department: string | null;
+    location: string | null;
+    province: string | null;
+    closing_date: string | null;
+    description: string;
+    application_url: string | null;
+    source_url: string | null;
+    status: "draft" | "published" | "closed";
+    created_at: string;
+    updated_at: string;
+  }> = [];
+  const pageSize = 1000;
 
-  if (filters.province) {
-    const province = southAfricanProvinces.find((name) => name.toLowerCase() === filters.province?.trim().toLowerCase());
-    if (province) query = query.ilike("description", `%Province: ${province}%`);
-  }
-  if (filters.department?.trim()) {
-    query = query.eq("department", filters.department.trim().slice(0, 180));
-  }
+  for (let offset = 0; offset < limit; offset += pageSize) {
+    const batchSize = Math.min(pageSize, limit - offset);
+    let query = supabase
+      .from("jobs")
+      .select("id,title,slug,department,location,province,closing_date,description,application_url,source_url,status,created_at,updated_at")
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(offset, offset + batchSize - 1);
 
-  if (search?.trim()) {
-    const term = search.trim().replace(/[^a-z0-9\s-]/gi, " ").replace(/\s+/g, " ").slice(0, 80).trim();
-    if (term) {
-      const searchFilters = ["title", "department", "location", "description"]
-        .map((column) => `${column}.ilike.%${term}%`);
-      query = query.or(searchFilters.join(","));
+    if (filters.department?.trim()) {
+      query = query.eq("department", filters.department.trim().slice(0, 180));
     }
-  }
 
-  query = query.or(`closing_date.is.null,closing_date.gte.${today}`);
-  const { data, error } = await query;
-  if (error) throw new Error(`Could not load vacancies: ${error.message}`);
-  return data ?? [];
+    const { data, error } = await query.or(getPublicJobsFilter(today, search, filters));
+    if (error) throw new Error(`Could not load vacancies: ${error.message}`);
+    jobs.push(...(data ?? []));
+    if ((data?.length ?? 0) < batchSize) break;
+  }
+  return jobs;
 }
 
-export async function getPublishedCircularJobs(year: number, number: number) {
-  if (!isSupabaseConfigured()) return [];
-  if (!Number.isInteger(year) || !Number.isInteger(number) || number < 1 || number > 100) {
-    throw new Error("Invalid DPSA circular details.");
+export async function getPublishedJobPage(
+  page: number,
+  pageSize = 10,
+  search?: string,
+  filters: JobSearchFilters = {},
+) {
+  if (!isSupabaseConfigured()) return { jobs: [], total: 0 };
+  if (!Number.isInteger(page) || page < 1 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+    throw new Error("Invalid vacancy page.");
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  const today = getSouthAfricanDate();
+  let query = supabase
     .from("jobs")
-    .select("id,title,slug,department,location,closing_date,description,application_url,status,created_at,updated_at")
+    .select("id,title,slug,department,location,province,closing_date,description,application_url,status,created_at,updated_at", { count: "exact" })
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: true })
+    .range((page - 1) * pageSize, page * pageSize - 1);
+
+  if (filters.department?.trim()) {
+    query = query.eq("department", filters.department.trim().slice(0, 180));
+  }
+  const { data, count, error } = await query
+    .or(getPublicJobsFilter(today, search, filters));
+  if (error) throw new Error(`Could not load vacancy page: ${error.message}`);
+  return { jobs: data ?? [], total: count ?? 0 };
+}
+
+export async function getPublishedCircularJobPage(year: number, number: number, page: number, pageSize = 10) {
+  if (!isSupabaseConfigured()) return { jobs: [], total: 0 };
+  if (!Number.isInteger(year) || !Number.isInteger(number) || number < 1 || number > 100) {
+    throw new Error("Invalid DPSA circular details.");
+  }
+  if (!Number.isInteger(page) || page < 1 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+    throw new Error("Invalid vacancy page.");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, count, error } = await supabase
+    .from("jobs")
+    .select("id,title,slug,department,location,province,closing_date,description,application_url,status,created_at,updated_at", { count: "exact" })
     .eq("status", "published")
     .ilike("description", `%DPSA CIRCULAR ${number} of ${year}%`)
     .or(`closing_date.is.null,closing_date.gte.${getSouthAfricanDate()}`)
     .order("created_at", { ascending: false })
-    .limit(1000);
+    .order("id", { ascending: true })
+    .range((page - 1) * pageSize, page * pageSize - 1);
 
   if (error) throw new Error(`Could not load DPSA Circular ${number} of ${year} vacancies: ${error.message}`);
-  return data ?? [];
+  return { jobs: data ?? [], total: count ?? 0 };
 }
 
-export function getPublishedCircularSlugs(jobs: Pick<Job, "description">[]) {
+export function getPublishedCircularSlugs(jobs: Pick<Job, "description" | "source_url">[]) {
   return [...new Set(jobs
-    .map((job) => getDpsaCircularSlug(job.description))
+    .map((job) => getDpsaCircularSlug(`${job.description} ${job.source_url ?? ""}`))
     .filter((slug): slug is string => Boolean(slug)))];
 }
 
-export async function getLatestPublishedCircular(): Promise<PublishedCircular | null> {
-  if (!isSupabaseConfigured()) return null;
+export async function getPublishedCirculars(): Promise<PublishedCircular[]> {
+  if (!isSupabaseConfigured()) return [];
 
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("description")
-    .eq("status", "published")
-    .or(`closing_date.is.null,closing_date.gte.${getSouthAfricanDate()}`)
-    .ilike("description", "%DPSA CIRCULAR%")
-    .order("created_at", { ascending: false })
-    .limit(1000);
-
-  if (error) throw new Error(`Could not load published circular vacancies: ${error.message}`);
-
+  const jobs = await getPublishedJobs(50_000);
   const circulars = new Map<string, PublishedCircular>();
-  for (const { description } of data ?? []) {
-    for (const match of description.matchAll(/\bDPSA\s+CIRCULAR\s+(\d{1,3})\s+of\s+(20\d{2})\b/gi)) {
-      const number = Number(match[1]);
-      const year = Number(match[2]);
-      if (number < 1 || number > 100) continue;
-      circulars.set(`${year}-${number}`, { year, number });
-    }
+  for (const job of jobs) {
+    const slug = getDpsaCircularSlug(`${job.description} ${job.source_url ?? ""}`);
+    const circular = slug ? parseDpsaCircularSlug(slug) : null;
+    if (circular) circulars.set(`${circular.year}-${circular.number}`, circular);
   }
 
   return [...circulars.values()].sort((left, right) =>
     right.year - left.year || right.number - left.number,
-  )[0] ?? null;
+  );
+}
+
+export async function getLatestPublishedCircular(): Promise<PublishedCircular | null> {
+  return (await getPublishedCirculars())[0] ?? null;
 }
 
 export async function getPopularJobSearches(limit = 6) {
@@ -200,42 +262,69 @@ export async function recordPopularJobSearch(searchTerm: string) {
   }
 }
 
-export async function getPublishedDepartments(limit = 8) {
-  if (!isSupabaseConfigured()) return [];
+export async function getPublishedJobFacets(selectedProvince?: string): Promise<PublishedJobFacets> {
+  if (!isSupabaseConfigured()) return { total: 0, provinces: [], departments: [], departmentsByProvince: {} };
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("department,closing_date")
-    .eq("status", "published")
-    .or(`closing_date.is.null,closing_date.gte.${getSouthAfricanDate()}`)
-    .not("department", "is", null)
-    .order("department")
-    .limit(100);
+  const provinceCounts = new Map<string, number>();
+  const departmentSets = new Map<string, Set<string>>();
+  const allDepartments = new Set<string>();
+  const today = getSouthAfricanDate();
+  let total = 0;
+  const pageSize = 1000;
 
-  if (error) throw new Error(`Could not load vacancy departments: ${error.message}`);
-  return [...new Set((data ?? []).map(({ department }) => department?.trim()).filter((department): department is string => Boolean(department)))]
-    .slice(0, limit);
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from("jobs")
+      .select("province,location,description,department")
+      .eq("status", "published")
+      .or(`closing_date.is.null,closing_date.gte.${today}`)
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(`Could not load vacancy filters: ${error.message}`);
+    const rows = data ?? [];
+    total += rows.length;
+    for (const job of rows) {
+      const province = getJobProvince(job);
+      if (province) provinceCounts.set(province, (provinceCounts.get(province) ?? 0) + 1);
+      const department = job.department?.trim();
+      if (department) {
+        allDepartments.add(department);
+        if (province) {
+          const provinceDepartments = departmentSets.get(province) ?? new Set<string>();
+          provinceDepartments.add(department);
+          departmentSets.set(province, provinceDepartments);
+        }
+      }
+    }
+    if (rows.length < pageSize) break;
+  }
+
+  const departmentsByProvince = Object.fromEntries([...departmentSets.entries()].map(([province, departments]) => [
+    province,
+    [...departments].sort((left, right) => left.localeCompare(right)),
+  ]));
+  const selected = Object.keys(departmentsByProvince)
+    .find((province) => province.toLowerCase() === selectedProvince?.trim().toLowerCase());
+
+  return {
+    total,
+    provinces: [...provinceCounts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((left, right) => left.name.localeCompare(right.name)),
+    departments: selectedProvince
+      ? departmentsByProvince[selected ?? ""] ?? []
+      : [...allDepartments].sort((left, right) => left.localeCompare(right)),
+    departmentsByProvince,
+  };
+}
+
+export async function getPublishedDepartments(limit = 100, province?: string) {
+  return (await getPublishedJobFacets(province)).departments.slice(0, limit);
 }
 
 export async function getPublishedProvinces() {
-  if (!isSupabaseConfigured()) return [];
-
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("location,description,closing_date")
-    .eq("status", "published")
-    .or(`closing_date.is.null,closing_date.gte.${getSouthAfricanDate()}`)
-    .limit(1000);
-
-  if (error) throw new Error(`Could not load vacancy provinces: ${error.message}`);
-  const provinces = new Set<string>();
-  for (const job of data ?? []) {
-    const province = getJobProvince(job);
-    if (province) provinces.add(province);
-  }
-  return [...provinces].sort((left, right) => left.localeCompare(right));
+  return (await getPublishedJobFacets()).provinces.map(({ name }) => name);
 }
 
 export async function getPublishedJob(slug: string) {

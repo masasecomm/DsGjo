@@ -120,8 +120,8 @@ function validateImportedJobs(rawJobs: FormDataEntryValue | null) {
       salaryBasis: detailsText("salaryBasis", 100),
     };
 
-    if (title.length < 5 || title.length > 180) {
-      throw new Error(`Vacancy ${index + 1} needs a title between 5 and 180 characters.`);
+    if (title.length < 5 || title.length > 250) {
+      throw new Error(`Vacancy ${index + 1} needs a title between 5 and 250 characters.`);
     }
     if (department.length > 180 || location.length > 180 || province.length > 100 || referenceNumber.length > 250 || postNumber.length > 40 || jobLevel.length > 50) {
       throw new Error(`Vacancy ${index + 1} has a department or location longer than 180 characters.`);
@@ -310,8 +310,8 @@ export async function createJob(formData: FormData) {
   const applicationUrl = String(formData.get("application_url") ?? "").trim();
   const status = String(formData.get("status") ?? "draft");
 
-  if (title.length < 5 || title.length > 180 || description.length < 20) {
-    throw new Error("Provide a job title (5–180 characters) and a description of at least 20 characters.");
+  if (title.length < 5 || title.length > 250 || description.length < 20) {
+    throw new Error("Provide a job title (5–250 characters) and a description of at least 20 characters.");
   }
   if (status !== "draft" && status !== "published") throw new Error("Invalid job status.");
   if (closingDate && !/^\d{4}-\d{2}-\d{2}$/.test(closingDate)) throw new Error("Invalid closing date.");
@@ -334,6 +334,8 @@ export async function createJob(formData: FormData) {
   if (error) throw new Error(`Could not create vacancy: ${error.message}`);
   revalidatePath("/");
   revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
+  revalidatePath("/admin/jobs");
   redirect("/admin/jobs");
 }
 
@@ -346,6 +348,7 @@ export async function createImportedJobs(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/admin/jobs");
   redirect(`/admin/jobs?imported=${inserts.length}`);
 }
@@ -362,6 +365,7 @@ export async function updateJobStatus(formData: FormData) {
   if (error) throw new Error(`Could not update vacancy: ${error.message}`);
   revalidatePath("/");
   revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/admin/jobs");
 }
 
@@ -382,7 +386,22 @@ export async function deleteJob(formData: FormData) {
   if (error) throw new Error(`Could not permanently delete vacancy: ${error.message}`);
   revalidatePath("/");
   revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
   revalidatePath(`/${job.slug}`);
+  revalidatePath("/admin/jobs");
+}
+
+export async function deleteAllJobs(formData: FormData) {
+  const supabase = await requireAdmin();
+  if (formData.get("confirmation") !== "DELETE ALL") {
+    throw new Error("Confirm the exact delete-all phrase before deleting vacancies.");
+  }
+
+  const { error } = await supabase.from("jobs").delete().not("id", "is", null);
+  if (error) throw new Error(`Could not permanently delete all vacancies: ${error.message}`);
+  revalidatePath("/");
+  revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/admin/jobs");
 }
 
@@ -396,8 +415,8 @@ export async function updateJob(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
   const applicationUrl = String(formData.get("application_url") ?? "").trim();
 
-  if (!id || title.length < 5 || title.length > 180 || description.length < 20) {
-    throw new Error("Provide a job title (5–180 characters) and a description of at least 20 characters.");
+  if (!id || title.length < 5 || title.length > 250 || description.length < 20) {
+    throw new Error("Provide a job title (5–250 characters) and a description of at least 20 characters.");
   }
   if (closingDate && !/^\d{4}-\d{2}-\d{2}$/.test(closingDate)) throw new Error("Invalid closing date.");
   if (applicationUrl && !/^https:\/\//i.test(applicationUrl)) throw new Error("Application links must use HTTPS.");
@@ -415,6 +434,7 @@ export async function updateJob(formData: FormData) {
   if (error) throw new Error(`Could not update vacancy: ${error.message}`);
   revalidatePath("/");
   revalidatePath("/jobs");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/admin/jobs");
   redirect("/admin/jobs");
 }

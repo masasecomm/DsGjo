@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { updateJob } from "@/app/actions";
+import { DeleteJobButton } from "@/components/admin/delete-job-button";
 import { requireAdmin } from "@/lib/admin";
 
 async function EditJobContent({
@@ -27,16 +28,19 @@ async function EditJobContent({
       <h1>Edit vacancy</h1>
       <p className="admin-subtitle">Update the details shown to job seekers.</p>
       <section className="admin-panel">
-        <form action={updateJob} className="site-form">
+        <form action={updateJob} className="site-form" id="edit-job-form">
           <input name="id" type="hidden" value={job.id} />
-          <label>Job title<input maxLength={180} name="title" required defaultValue={job.title} /></label>
+          <label>Job title<input maxLength={250} name="title" required defaultValue={job.title} /></label>
           <label>Department<input name="department" defaultValue={job.department ?? ""} /></label>
           <label>Location<input name="location" defaultValue={job.location ?? ""} /></label>
           <label>Closing date<input name="closing_date" type="date" defaultValue={job.closing_date ?? ""} /></label>
           <label>Job details<textarea maxLength={20000} name="description" required defaultValue={job.description} /></label>
           <label>Application link<input name="application_url" type="url" defaultValue={job.application_url ?? ""} /></label>
-          <button className="form-button" type="submit">Save changes</button>
         </form>
+        <div className="job-edit-actions">
+          <button className="form-button" form="edit-job-form" type="submit">Save changes</button>
+          <DeleteJobButton id={job.id} title={job.title} />
+        </div>
       </section>
     </>
   );
