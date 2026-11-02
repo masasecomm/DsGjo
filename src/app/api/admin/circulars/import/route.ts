@@ -48,7 +48,7 @@ function getStringList(value: unknown, field: string, index: number): string[] {
   if (
     !Array.isArray(value)
     || value.length > 100
-    || value.some((entry) => typeof entry !== "string" || entry.length > 2000)
+    || value.some((entry) => typeof entry !== "string" || entry.length > 20_000)
   ) {
     throw new Error(`Vacancy ${index} has invalid ${field} details.`);
   }
