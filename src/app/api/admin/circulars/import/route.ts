@@ -162,7 +162,7 @@ function validateCircularJobs(
 
     return {
       title,
-      slug: getJobSlug(title, description, pdfUrl),
+      slug: getJobSlug(title, description, pdfUrl, postNumber || referenceNumber || `vacancy-${index + 1}`),
       department: department || null,
       location: location || null,
       closing_date: closingDate || null,
