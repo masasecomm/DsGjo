@@ -210,15 +210,15 @@ export async function generateMetadata({
     ...(isCircularJob(job) && {
       openGraph: {
         images: [{
-          url: "/dpsa-government-jobs.png",
-          width: 400,
-          height: 400,
-          alt: "DPSA Government Jobs",
+          url: "/south-african-coat-of-arms.png",
+          width: 679,
+          height: 452,
+          alt: "South African coat of arms",
         }],
       },
       twitter: {
         card: "summary_large_image",
-        images: ["/dpsa-government-jobs.png"],
+        images: ["/south-african-coat-of-arms.png"],
       },
     }),
     ...(!isOpen && { robots: { index: false, follow: true } }),
@@ -487,10 +487,10 @@ export default async function JobPage({
           {isCircularJob(job) && (
             <figure className="vacancy-featured-image">
               <Image
-                src="/dpsa-government-jobs.png"
-                alt="DPSA Government Jobs"
-                width={400}
-                height={400}
+                src="/south-african-coat-of-arms.png"
+                alt="South African coat of arms"
+                width={679}
+                height={452}
                 priority
               />
             </figure>
