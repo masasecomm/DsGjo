@@ -6,6 +6,12 @@ import { requireAdmin } from "@/lib/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  clearAdminLoginFailures,
+  isAdminLoginLocked,
+  isAdminLoginProtectionConfigured,
+  recordAdminLoginFailure,
+} from "@/lib/admin-login-lockout";
 import { getJobSlug } from "@/lib/job-slugs";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 
@@ -297,15 +303,73 @@ export async function signIn(
   if (!isSupabaseConfigured()) {
     return { message: "Connect your Supabase project before signing in.", error: true };
   }
+  if (!isAdminLoginProtectionConfigured()) {
+    return {
+      message: "Admin sign-in protection is not configured. Contact the site owner.",
+      error: true,
+    };
+  }
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  if (!email || !password) return { message: "Enter your email and password.", error: true };
+  if (!email || email.length > 254 || !password) {
+    return { message: "Enter a valid email address and password.", error: true };
+  }
+
+  const locked = await isAdminLoginLocked(email);
+  if (locked === null) {
+    return {
+      message: "Admin sign-in protection is temporarily unavailable. Please try again later.",
+      error: true,
+    };
+  }
+  if (locked) {
+    return {
+      message: "Too many incorrect attempts. Admin sign-in is blocked for 24 hours.",
+      error: true,
+    };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { message: "Sign-in failed. Check your credentials and try again.", error: true };
+  if (error) {
+    if (error.code === "invalid_credentials") {
+      const failures = await recordAdminLoginFailure(email);
+      if (failures === null) {
+        return {
+          message: "Admin sign-in protection is temporarily unavailable. Please try again later.",
+          error: true,
+        };
+      }
+      if (failures === 2) {
+        return {
+          message: "Too many incorrect attempts. Admin sign-in is blocked for 24 hours.",
+          error: true,
+        };
+      }
+      if (failures === 1) {
+        return {
+          message: "Incorrect email or password. One failed attempt remains before a 24-hour lockout.",
+          error: true,
+        };
+      }
+    } else {
+      console.error("Admin sign-in failed for a reason other than invalid credentials.", error.code);
+    }
+    return { message: "Sign-in failed. Check your credentials and try again.", error: true };
+  }
   if (!data.session) {
     return { message: "Sign-in succeeded, but no session was created. Please try again.", error: true };
+  }
+
+  if (!(await clearAdminLoginFailures(email))) {
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      console.error("Could not sign out after failing to reset admin login protection.", signOutError);
+    }
+    return {
+      message: "Admin sign-in protection is temporarily unavailable. Please try again later.",
+      error: true,
+    };
   }
 
   redirect("/admin");

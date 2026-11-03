@@ -200,6 +200,24 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      is_admin_login_locked: {
+        Args: {
+          p_email: string;
+        };
+        Returns: boolean;
+      };
+      record_admin_login_failure: {
+        Args: {
+          p_email: string;
+        };
+        Returns: number;
+      };
+      clear_admin_login_failures: {
+        Args: {
+          p_email: string;
+        };
+        Returns: boolean;
+      };
       is_admin: {
         Args: Record<string, never>;
         Returns: boolean;
