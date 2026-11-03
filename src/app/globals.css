@@ -822,6 +822,8 @@ body :is(
 .circular-history { margin-top: 22px; }
 .circular-history h3 { margin: 0; font-size: 14px; }
 .circular-discovery-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.circular-discovery-card.is-published { border-color: #e2e5e2; background: #f3f4f3; }
+.circular-discovery-card.is-published strong, .circular-discovery-card.is-published .circular-posting-date, .circular-discovery-card.is-published a { color: #777f78; }
 .circular-discovery-card > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .circular-discovery-card strong { color: var(--ink); font-size: 11px; }
 .circular-posting-date { color: var(--muted); font-size: 10px; }

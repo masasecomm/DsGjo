@@ -192,9 +192,15 @@ export function DpsaCircularDiscovery({
       setCirculars(result.circulars);
       setPublishedCirculars(result.publishedCirculars);
       setCheckedAt(result.checkedAt);
-      setMessage(result.circulars.length
-        ? `Found ${result.circulars.length} recent unimported circular${result.circulars.length === 1 ? "" : "s"}.`
-        : "No new DPSA vacancy circulars were found.");
+      const publishedKeys = new Set(
+        result.publishedCirculars.map(({ year, number }) => `${year}-${number}`),
+      );
+      const readyCount = result.circulars.filter(
+        ({ year, number }) => !publishedKeys.has(`${year}-${number}`),
+      ).length;
+      setMessage(readyCount
+        ? `Found ${readyCount} recent unimported circular${readyCount === 1 ? "" : "s"}. Published circulars remain listed.`
+        : "All recent circulars have already been published.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not check the DPSA circular listing.");
     } finally {
@@ -356,7 +362,7 @@ export function DpsaCircularDiscovery({
     <section className="admin-panel circular-discovery">
       <h2>Find new DPSA vacancy circulars</h2>
       <p className="circular-import-intro">
-        Check the official DPSA listing for the five newest circulars not yet imported. Parse a circular to review its vacancies, then publish them in small batches with live progress.
+        Check the official DPSA listing for recent circulars. Published circulars remain listed; parse an unimported circular to review its vacancies, then publish them in small batches with live progress.
       </p>
       <div className="circular-import-picker">
         <button className="admin-action" disabled={isChecking || Boolean(parsingKey) || Boolean(publishingKey)} onClick={() => void checkForUpdates()} type="button">
@@ -369,30 +375,16 @@ export function DpsaCircularDiscovery({
       {error && <p className="circular-message error" role="alert">{error}</p>}
       {message && <p className="circular-message" role="status">{message}</p>}
 
-      {publishedCirculars.length > 0 && (
-        <section className="circular-history" aria-labelledby="circular-history-heading">
-          <h3 id="circular-history-heading">Imported circular history</h3>
-          <div className="circular-discovery-list">
-            {publishedCirculars.map((circular) => (
-              <article className="circular-discovery-card" key={`${circular.year}-${circular.number}`}>
-                <div>
-                  <strong>DPSA Circular {circular.number} of {circular.year}</strong>
-                  <span>{circular.jobCount} vacancies originally imported</span>
-                </div>
-                <span className="admin-status published">Published</span>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
       {circulars.length > 0 && (
         <div className="circular-discovery-list">
           {circulars.map((circular) => {
             const key = `${circular.year}-${circular.number}`;
+            const published = publishedCirculars.find((item) =>
+              item.year === circular.year && item.number === circular.number,
+            );
             const isParsing = parsingKey === key;
             return (
-              <article className="circular-discovery-card" key={key}>
+              <article className={`circular-discovery-card${published ? " is-published" : ""}`} key={key}>
                 <div>
                   <strong>{circular.label}</strong>
                   <span className="circular-posting-date">
@@ -407,20 +399,54 @@ export function DpsaCircularDiscovery({
                     Official details <ExternalLink size={12} />
                   </a>
                 </div>
-                <button
-                  className="admin-action"
-                  disabled={Boolean(parsingKey) || isChecking || Boolean(publishingKey)}
-                  onClick={() => void parseCircular(circular)}
-                  type="button"
-                >
-                  {isParsing
-                    ? <><LoaderCircle className="circular-spinner" size={15} /> Parsing PDF...</>
-                    : <><FileText size={15} /> Parse circular</>}
-                </button>
+                {published ? (
+                  <span className="admin-status published">Published</span>
+                ) : (
+                  <button
+                    className="admin-action"
+                    disabled={Boolean(parsingKey) || isChecking || Boolean(publishingKey)}
+                    onClick={() => void parseCircular(circular)}
+                    type="button"
+                  >
+                    {isParsing
+                      ? <><LoaderCircle className="circular-spinner" size={15} /> Parsing PDF...</>
+                      : <><FileText size={15} /> Parse circular</>}
+                  </button>
+                )}
               </article>
             );
           })}
         </div>
+      )}
+
+      {publishedCirculars.some((published) =>
+        !circulars.some((circular) =>
+          circular.year === published.year && circular.number === published.number,
+        ),
+      ) && (
+        <section className="circular-history" aria-labelledby="circular-history-heading">
+          <h3 id="circular-history-heading">Published circular history</h3>
+          <div className="circular-discovery-list">
+            {publishedCirculars
+              .filter((published) =>
+                !circulars.some((circular) =>
+                  circular.year === published.year && circular.number === published.number,
+                ),
+              )
+              .map((circular) => (
+                <article
+                  className="circular-discovery-card is-published"
+                  key={`${circular.year}-${circular.number}`}
+                >
+                  <div>
+                    <strong>DPSA Circular {circular.number} of {circular.year}</strong>
+                    <span>{circular.jobCount} vacancies originally imported</span>
+                  </div>
+                  <span className="admin-status published">Published</span>
+                </article>
+              ))}
+          </div>
+        </section>
       )}
 
       {parsedCirculars.map(({ circular, vacancies }) => {

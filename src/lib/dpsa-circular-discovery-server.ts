@@ -77,10 +77,12 @@ export async function getRecentDpsaCirculars(supabase: SupabaseClient<Database>)
   }
 
   const importedKeys = new Set((imported ?? []).map(({ year, circular_number }) => `${year}-${circular_number}`));
-  const unimported = candidates
-    .filter((circular) => !importedKeys.has(`${circular.year}-${circular.number}`))
-    .slice(0, 5);
-  const circulars = await Promise.all(unimported.map(async (circular) => {
+  const recentKeys = new Set(candidates.slice(0, 5).map(({ year, number }) => `${year}-${number}`));
+  const visibleCirculars = candidates.filter((circular) =>
+    recentKeys.has(`${circular.year}-${circular.number}`)
+    || importedKeys.has(`${circular.year}-${circular.number}`),
+  );
+  const circulars = await Promise.all(visibleCirculars.map(async (circular) => {
     let detailResponse: Response;
     try {
       detailResponse = await fetch(circular.listingUrl, {
