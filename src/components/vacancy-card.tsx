@@ -26,7 +26,7 @@ export function VacancyCard({ job, query = "" }: { job: VacancyCardJob; query?: 
     <article className="vacancy-card">
       {isCircular ? (
         <span className="vacancy-card-art">
-          <Image src="/south-african-coat-of-arms.png" alt="South African coat of arms" width={679} height={452} />
+          <Image src="/dpsa-government-jobs.png" alt="DPSA Government Jobs" width={400} height={400} />
         </span>
       ) : (
         <span className="vacancy-card-icon" aria-hidden="true"><Building2 size={24} /></span>

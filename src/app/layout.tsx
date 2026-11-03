@@ -14,6 +14,10 @@ const jost = Jost({
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
+  icons: {
+    icon: "/dpsa-government-jobs.png",
+    apple: "/dpsa-government-jobs.png",
+  },
   alternates: {
     canonical: "/",
   },
