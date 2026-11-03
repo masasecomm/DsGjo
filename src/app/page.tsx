@@ -12,7 +12,6 @@ import { JobPagination } from "@/components/job-pagination";
 import { VacancyCard } from "@/components/vacancy-card";
 import {
   getPublishedJobFacets,
-  getPopularJobSearches,
   getPublishedJobPage,
 } from "@/lib/jobs";
 import { getSiteUrl } from "@/lib/site-url";
@@ -29,10 +28,9 @@ export default async function Home({
   const { page: pageParam } = await searchParams;
   const requestedPage = Number(Array.isArray(pageParam) ? pageParam[0] : pageParam);
   const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
-  const [jobPage, facets, popularSearches] = await Promise.all([
+  const [jobPage, facets] = await Promise.all([
     getPublishedJobPage(page, 10),
     getPublishedJobFacets(),
-    getPopularJobSearches(5),
   ]);
   const pageCount = Math.max(1, Math.ceil(jobPage.total / 10));
   const currentPage = Math.min(page, pageCount);
@@ -68,12 +66,6 @@ export default async function Home({
               <h1>South African Government Jobs</h1>
               <p>Find current government vacancies by job title, province or department.</p>
               <JobSearchForm variant="home" provinces={facets.provinces.map(({ name }) => name)} departments={facets.departments} />
-              <div className="home-popular-searches">
-                <strong>Popular Searches:</strong>
-                {popularSearches.length ? popularSearches.map(({ search_term }) => (
-                  <Link href={`/jobs?q=${encodeURIComponent(search_term)}`} key={search_term}>{search_term}</Link>
-                )) : <span>Popular terms will appear as vacancy searches are made.</span>}
-              </div>
             </div>
           </div>
         </section>
