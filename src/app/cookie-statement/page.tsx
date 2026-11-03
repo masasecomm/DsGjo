@@ -38,7 +38,7 @@ const cookieTypes = [
     number: "04",
     title: "Advertising & other third parties",
     status: "NOT IN USE",
-    description: "The site does not currently use advertising cookies or third-party tracking cookies. Following an external job application link takes you to another site with its own cookie practices.",
+    description: "The site does not use advertising or third-party tracking cookies. Cloudflare Turnstile provides security checks on forms and is not used for advertising. Following an external job application link takes you to another site with its own cookie practices.",
     tone: "optional",
   },
 ] as const;
@@ -66,7 +66,7 @@ export default function CookieStatementPage() {
             <div>
               <h2>What are cookies?</h2>
               <p>Cookies are small text files a website can store in your browser. Some are needed for basic functions, such as keeping a secure administrator session. Others can remember preferences or measure site usage.</p>
-              <p>This independent site turns DPSA circulars and other government vacancy notices into searchable listings. We use essential cookies for site security and administrator sign-in, and Google Analytics cookies to measure site usage. Separate aggregate search and page-view counts do not use cookies or identify individual visitors.</p>
+              <p>This independent site turns DPSA circulars and other government vacancy notices into searchable listings. We use essential cookies for site security and administrator sign-in, Google Analytics cookies to measure site usage, and Cloudflare Turnstile to help protect forms against automated abuse. Separate aggregate search and page-view counts do not use cookies or identify individual visitors.</p>
             </div>
           </section>
 

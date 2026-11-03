@@ -7,8 +7,20 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getJobSlug } from "@/lib/job-slugs";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export type FormState = { message: string; error?: boolean };
+
+async function getTurnstileError(formData: FormData): Promise<FormState | null> {
+  const result = await verifyTurnstileToken(formData);
+  if (result === "invalid") {
+    return { message: "Please complete the security check and try again.", error: true };
+  }
+  if (result === "unavailable") {
+    return { message: "Spam protection is temporarily unavailable. Please try again later.", error: true };
+  }
+  return null;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -192,6 +204,8 @@ export async function subscribeToAlerts(
   _previousState: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  const turnstileError = await getTurnstileError(formData);
+  if (turnstileError) return turnstileError;
   if (!isSupabaseConfigured()) {
     return { message: "Job alerts will be available once the site is connected to its database.", error: true };
   }
@@ -241,6 +255,8 @@ export async function addComment(
   _previousState: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  const turnstileError = await getTurnstileError(formData);
+  if (turnstileError) return turnstileError;
   if (!isSupabaseConfigured()) {
     return { message: "Comments will be available once the site is connected to its database.", error: true };
   }
@@ -276,6 +292,8 @@ export async function signIn(
   _previousState: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  const turnstileError = await getTurnstileError(formData);
+  if (turnstileError) return turnstileError;
   if (!isSupabaseConfigured()) {
     return { message: "Connect your Supabase project before signing in.", error: true };
   }

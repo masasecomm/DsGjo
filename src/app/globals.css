@@ -141,6 +141,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .subscribe-form button:hover, .form-button:hover { background: #28634e; }.subscribe-form button:disabled { opacity: .65; cursor: wait; }
 .alert-footnote { grid-column: 2; margin-top: -30px; color: #7a867d; font-size: 9px; }
 .form-message { margin: 9px 0 0; color: var(--green); font-size: 11px; line-height: 1.5; }.form-message.error { color: #a3332d; }
+.turnstile-field { display: grid; gap: 5px; justify-items: start; }.turnstile-error { margin: 0; color: #a3332d; font-size: 11px; line-height: 1.5; }
 .consent-check { display: flex; align-items: flex-start; gap: 7px; margin: 9px 2px 0; color: #66746b; font-size: 10px; line-height: 1.5; }.consent-check input { flex: 0 0 auto; margin: 1px 0 0; accent-color: var(--green); }.consent-check a { color: var(--green); text-decoration: underline; }
 
 .guide-section { display: grid; grid-template-columns: 1.6fr .7fr; gap: 15px; padding-top: 65px; padding-bottom: 75px; }

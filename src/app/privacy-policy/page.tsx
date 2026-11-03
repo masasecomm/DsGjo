@@ -71,7 +71,7 @@ export default function PrivacyPolicyPage() {
                   <li><strong>Administrator access:</strong> administrator account information is used to sign in and manage the website; visitors do not need an account to browse vacancies.</li>
                 </ul>
                 <h3>Technical information</h3>
-                <p>When you search vacancies, we store the search term and daily search count in aggregate to show popular searches. We also record daily counts of public page views, including vacancy, province, and department pages. These first-party counts are not linked to an account, name, or visitor profile. We also use Google Analytics (measurement ID G-69H0HQGRT9) to measure site usage. Google Analytics may use cookies and process technical data such as online identifiers and device information. Search and page rankings use first-party counts from the most recent 30 days. Our hosting and analytics providers may process technical information to deliver, measure, and protect the site.</p>
+                <p>When you search vacancies, we store the search term and daily search count in aggregate to show popular searches. We also record daily counts of public page views, including vacancy, province, and department pages. These first-party counts are not linked to an account, name, or visitor profile. We also use Google Analytics (measurement ID G-69H0HQGRT9) to measure site usage. Google Analytics may use cookies and process technical data such as online identifiers and device information. Cloudflare Turnstile checks comment, job-alert, and administrator sign-in forms for automated abuse; Cloudflare may process technical information, including browser and device signals and the request IP address, to provide this security service. Search and page rankings use first-party counts from the most recent 30 days. Our hosting and analytics providers may process technical information to deliver, measure, and protect the site.</p>
                 <p>Essential cookies may be used for administrator sign-in and session security. Google Analytics may set analytics cookies. You can manage or delete cookies in your browser settings.</p>
               </div>
             </section>
@@ -94,7 +94,7 @@ export default function PrivacyPolicyPage() {
               <span className="privacy-section-number">04</span>
               <div>
                 <h2>Who information is shared with</h2>
-                <p>We do not sell your personal information. We use service providers to run the site, including Vercel for hosting and Supabase for database and administrator authentication. They process information to provide their services.</p>
+                <p>We do not sell your personal information. We use service providers to run the site, including Vercel for hosting, Supabase for database and administrator authentication, and Cloudflare for Turnstile security checks. They process information to provide their services.</p>
                 <p>We do not send your personal information to the DPSA or government departments. If you follow an external application link, information you provide there is handled by that organisation under its own privacy practices. Information may also be disclosed where the law requires it.</p>
               </div>
             </section>

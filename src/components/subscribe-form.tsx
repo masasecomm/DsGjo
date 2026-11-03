@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { subscribeToAlerts, type FormState } from "@/app/actions";
+import { isTurnstileConfigured, TurnstileField } from "@/components/turnstile-field";
 
 const initialState: FormState = { message: "" };
 
@@ -13,9 +15,10 @@ export function SubscribeForm() {
       <div className="subscribe-form">
         <input aria-label="Your name" autoComplete="name" maxLength={80} minLength={2} name="name" placeholder="Your name" required type="text" />
         <input aria-label="Email address" autoComplete="email" maxLength={254} name="email" placeholder="Your email" required type="email" />
-        <button disabled={pending} type="submit">{pending ? "Please wait..." : "Notify Me"}</button>
+        <button disabled={pending || !isTurnstileConfigured} type="submit">{pending ? "Please wait..." : "Notify Me"}</button>
       </div>
-      <label className="consent-check"><input name="consent" required type="checkbox" />I agree to the <a href="/privacy-policy">privacy policy</a> and to my name and email being stored for vacancy updates.</label>
+      <label className="consent-check"><input name="consent" required type="checkbox" />I agree to the <Link href="/privacy-policy">privacy policy</Link> and to my name and email being stored for vacancy updates.</label>
+      <TurnstileField pending={pending} />
       <p className={`form-message${state.error ? " error" : ""}`} aria-live="polite">{state.message}</p>
     </form>
   );

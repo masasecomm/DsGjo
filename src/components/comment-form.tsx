@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { addComment, type FormState } from "@/app/actions";
+import { isTurnstileConfigured, TurnstileField } from "@/components/turnstile-field";
 
 const initialState: FormState = { message: "" };
 
@@ -13,7 +14,8 @@ export function CommentForm({ jobId }: { jobId: string }) {
     <form action={action} className="site-form">
       <label>Your name<input autoComplete="name" maxLength={80} name="author_name" required /></label>
       <label>Your comment<textarea maxLength={2000} name="content" required /></label>
-      <button className="form-button" disabled={pending} type="submit">{pending ? "Sending..." : "Post comment"}</button>
+      <TurnstileField pending={pending} />
+      <button className="form-button" disabled={pending || !isTurnstileConfigured} type="submit">{pending ? "Sending..." : "Post comment"}</button>
       {state.message && <p className={`form-message${state.error ? " error" : ""}`} aria-live="polite">{state.message}</p>}
       <small>Comments are reviewed before they appear publicly.</small>
     </form>

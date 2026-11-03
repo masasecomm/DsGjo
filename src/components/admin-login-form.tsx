@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { signIn, type FormState } from "@/app/actions";
+import { isTurnstileConfigured, TurnstileField } from "@/components/turnstile-field";
 
 const initialState: FormState = { message: "" };
 
@@ -28,7 +29,8 @@ export function AdminLoginForm({
         <form action={action} className="site-form">
           <label>Email address<input autoComplete="email" name="email" required type="email" /></label>
           <label>Password<input autoComplete="current-password" name="password" required type="password" /></label>
-          <button className="form-button" disabled={pending || !configured} type="submit">{pending ? "Signing in..." : "Sign in"}</button>
+          <TurnstileField pending={pending} />
+          <button className="form-button" disabled={pending || !configured || !isTurnstileConfigured} type="submit">{pending ? "Signing in..." : "Sign in"}</button>
           {state.message && <p className={`form-message${state.error ? " error" : ""}`} aria-live="polite">{state.message}</p>}
         </form>
       </section>
