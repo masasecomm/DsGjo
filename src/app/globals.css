@@ -235,6 +235,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .job-meta { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 18px; color: #69766d; font-size: 12px; }
 .job-meta > span { display: inline-flex; min-width: 0; align-items: flex-start; gap: 6px; }
 .job-meta svg { flex: 0 0 auto; margin-top: 2px; }
+.adsense-ad { min-height: 274px; margin: 20px 0; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.adsense-label { margin: 0 0 8px; color: #69766d; font-size: 10px; text-align: center; }
 .search-highlight { padding: 0 .04em; border-radius: 2px; color: inherit; background: rgba(56, 189, 248, .3); }
 .vacancy-source { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 18px 0 0; color: #69766d; font-size: 11px; }.vacancy-source a { display: inline-flex; align-items: center; gap: 4px; color: var(--green); font-weight: 700; }.vacancy-source a:hover { text-decoration: underline; text-underline-offset: 3px; }.vacancy-source > span { color: #7a867d; }
 .vacancy-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; margin: 23px 0 0; border: 1px solid var(--line); border-radius: 8px; background: var(--line); }.vacancy-facts > div { min-width: 0; padding: 13px 15px; background: #fbfcf9; }.vacancy-facts dt { margin-bottom: 5px; color: #77847b; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }.vacancy-facts dd { margin: 0; color: #243a2e; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }

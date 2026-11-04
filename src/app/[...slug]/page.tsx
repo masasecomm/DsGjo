@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { ArrowLeft, ArrowUpRight, Banknote, CalendarDays, MapPin, MessageCircle } from "lucide-react";
+import { AdSenseAd } from "@/components/adsense-ad";
 import { CommentForm } from "@/components/comment-form";
 import { JobPagination } from "@/components/job-pagination";
 import { SearchHighlight } from "@/components/search-highlight";
@@ -536,18 +537,21 @@ export default async function JobPage({
               </CopySectionView>
             )}
             {(applicationInstructions || emails.length || methods.length || documents.length || enquiries || telephone) && (
-              <CopySectionView title="How to apply">
-                {applicationSummary && <p><SearchHighlight text={sentenceLines(applicationSummary)} query={q} /></p>}
-                {(methods.length > 0 || emails.length > 0 || documents.length > 0 || enquiries || telephone) && (
-                  <ul>
-                    {methods.map((item) => <li key={item}><SearchHighlight text={`Application method: ${item}`} query={q} /></li>)}
-                    {emails.map((item) => <li key={item}><SearchHighlight text="Email: " query={q} /><a href={`mailto:${item}`}><SearchHighlight text={item} query={q} /></a></li>)}
-                    {documents.length > 0 && <li><SearchHighlight text={`Documents to include: ${documents.join(", ")}`} query={q} /></li>}
-                    {enquiries && <li><SearchHighlight text={`Enquiries: ${enquiries}`} query={q} /></li>}
-                    {telephone && <li><SearchHighlight text={`Telephone: ${telephone}`} query={q} /></li>}
-                  </ul>
-                )}
-              </CopySectionView>
+              <>
+                <AdSenseAd />
+                <CopySectionView title="How to apply">
+                  {applicationSummary && <p><SearchHighlight text={sentenceLines(applicationSummary)} query={q} /></p>}
+                  {(methods.length > 0 || emails.length > 0 || documents.length > 0 || enquiries || telephone) && (
+                    <ul>
+                      {methods.map((item) => <li key={item}><SearchHighlight text={`Application method: ${item}`} query={q} /></li>)}
+                      {emails.map((item) => <li key={item}><SearchHighlight text="Email: " query={q} /><a href={`mailto:${item}`}><SearchHighlight text={item} query={q} /></a></li>)}
+                      {documents.length > 0 && <li><SearchHighlight text={`Documents to include: ${documents.join(", ")}`} query={q} /></li>}
+                      {enquiries && <li><SearchHighlight text={`Enquiries: ${enquiries}`} query={q} /></li>}
+                      {telephone && <li><SearchHighlight text={`Telephone: ${telephone}`} query={q} /></li>}
+                    </ul>
+                  )}
+                </CopySectionView>
+              </>
             )}
             {notes.length > 0 && <CopySectionView title="Please note"><ul>{notes.map((item, index) => <li key={`${index}-${item}`}><SearchHighlight text={item} query={q} /></li>)}</ul></CopySectionView>}
             {!jobPurpose && qualifications.length === 0 && !experienceRequirements && duties.length === 0 && skills.length === 0 && !applicationInstructions && (
