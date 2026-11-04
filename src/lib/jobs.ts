@@ -55,6 +55,14 @@ export function isJobOpen(job: Pick<Job, "closing_date">) {
   return !job.closing_date || job.closing_date >= getSouthAfricanDate();
 }
 
+export function isJobPostingIndexable(
+  job: Pick<Job, "status" | "closing_date" | "location" | "province" | "description">,
+) {
+  return job.status === "published"
+    && isJobOpen(job)
+    && Boolean(job.location || job.province || getVacancyFact(job.description, "province"));
+}
+
 export function getVacancyFact(description: string, ...labels: string[]) {
   const labelPattern = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
   return description.match(new RegExp(`\\b(?:${labelPattern})\\s*:\\s*([^•|\\r\\n]+)`, "i"))?.[1]?.trim() ?? "";

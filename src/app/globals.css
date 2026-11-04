@@ -408,6 +408,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .stat-card b { display: block; margin-top: 9px; color: #17499e; font-size: 28px; font-weight: 600; }
 .admin-panel { margin-bottom: 18px; padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow-x: auto; }
 .admin-panel h2 { margin: 0 0 15px; font-size: 21px; font-weight: 500; }
+.google-indexing-panel { margin: 20px 0; }.google-indexing-panel .admin-subtitle { max-width: 900px; }.google-indexing-control { display: grid; justify-items: start; gap: 8px; }.google-indexing-control .form-message { margin: 0; }.google-indexing-control form { margin: 0; }
 .admin-panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .admin-panel-heading h2 { margin-bottom: 15px; }
 .admin-panel-heading form { margin: 0 0 15px; }

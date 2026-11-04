@@ -4,7 +4,9 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { updateJob } from "@/app/actions";
 import { DeleteJobButton } from "@/components/admin/delete-job-button";
+import { IndexJobButton } from "@/components/admin/google-indexing-buttons";
 import { requireAdmin } from "@/lib/admin";
+import { isJobIndexable, isGoogleIndexingConfigured } from "@/lib/google-indexing";
 
 async function EditJobContent({
   params,
@@ -16,7 +18,7 @@ async function EditJobContent({
   const supabase = await requireAdmin();
   const { data: job, error } = await supabase
     .from("jobs")
-    .select("id,title,department,location,closing_date,description,application_url")
+    .select("id,title,department,location,province,closing_date,description,application_url,status")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(`Could not load vacancy: ${error.message}`);
@@ -27,6 +29,20 @@ async function EditJobContent({
       <Link href="/admin/jobs" className="back-link">← All vacancies</Link>
       <h1>Edit vacancy</h1>
       <p className="admin-subtitle">Update the details shown to job seekers.</p>
+      <section className="admin-panel google-indexing-panel">
+        <h2>Google indexing</h2>
+        <p className="admin-subtitle">Request a Google recrawl for this vacancy if it is published, open, and has location details. Google does not guarantee inclusion or an immediate crawl.</p>
+        {!isGoogleIndexingConfigured() && (
+          <p className="admin-banner">
+            Configure the Google Indexing API service-account key in Vercel as <code>GOOGLE_INDEXING_SERVICE_ACCOUNT_JSON</code> to enable requests.
+          </p>
+        )}
+        <IndexJobButton
+          jobId={job.id}
+          eligible={isJobIndexable(job)}
+          configured={isGoogleIndexingConfigured()}
+        />
+      </section>
       <section className="admin-panel">
         <form action={updateJob} className="site-form" id="edit-job-form">
           <input name="id" type="hidden" value={job.id} />

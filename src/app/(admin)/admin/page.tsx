@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { IndexAllButton } from "@/components/admin/google-indexing-buttons";
 import { requireAdmin } from "@/lib/admin";
+import { isGoogleIndexingConfigured } from "@/lib/google-indexing";
 
 async function AdminDashboardContent() {
   await connection();
@@ -34,6 +36,20 @@ async function AdminDashboardContent() {
         <Link className="stat-card" href="/admin/comments"><span>Comments to review</span><b>{comments.count ?? 0}</b></Link>
         <Link className="stat-card" href="/admin/subscribers"><span>Active job alerts</span><b>{subscribers.count ?? 0}</b></Link>
       </div>
+      <section className="admin-panel google-indexing-panel">
+        <h2>Google indexing</h2>
+        <p className="admin-subtitle">
+          Request indexing for currently published, open vacancies eligible for Google’s JobPosting Indexing API.
+          Google limits this API to 200 URL requests per project per day; other site pages are discovered through the sitemap.
+        </p>
+        {!isGoogleIndexingConfigured() && (
+          <p className="admin-banner">
+            To enable this, create a Google Cloud service account, enable the Indexing API, add its email as an owner in Search Console,
+            then add its JSON key to Vercel as the secret <code>GOOGLE_INDEXING_SERVICE_ACCOUNT_JSON</code> and redeploy.
+          </p>
+        )}
+        <IndexAllButton configured={isGoogleIndexingConfigured()} />
+      </section>
       <div className="admin-content-grid">
         <section className="admin-panel">
           <h2>Top searches</h2>

@@ -12,10 +12,107 @@ import {
   isAdminLoginProtectionConfigured,
   recordAdminLoginFailure,
 } from "@/lib/admin-login-lockout";
+import { isJobIndexable, isGoogleIndexingConfigured, requestGoogleIndexing } from "@/lib/google-indexing";
 import { getJobSlug } from "@/lib/job-slugs";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export type FormState = { message: string; error?: boolean };
+export type GoogleIndexingBatchState = {
+  submitted: number;
+  failed: number;
+  message?: string;
+  quotaExceeded?: boolean;
+};
+
+export async function requestJobIndexing(
+  _previousState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requireAdmin();
+  if (!isGoogleIndexingConfigured()) {
+    return {
+      message: "Google Indexing is not configured. Add a valid service-account JSON key as GOOGLE_INDEXING_SERVICE_ACCOUNT_JSON in Vercel.",
+      error: true,
+    };
+  }
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { message: "Missing vacancy ID. Refresh and try again.", error: true };
+
+  const supabase = await createSupabaseServerClient();
+  const { data: job, error } = await supabase
+    .from("jobs")
+    .select("id,slug,status,closing_date,location,province,description")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(`Could not load vacancy for indexing: ${error.message}`);
+  if (!job) return { message: "This vacancy no longer exists.", error: true };
+  if (!isJobIndexable(job)) {
+    return {
+      message: "Only published, open vacancies with location details can be submitted to Google’s JobPosting Indexing API.",
+      error: true,
+    };
+  }
+
+  const result = await requestGoogleIndexing([job.slug]);
+  if (result.submitted === 1) {
+    return { message: "Google received the indexing request. It does not guarantee inclusion or an immediate crawl." };
+  }
+  return {
+    message: result.message || "Google did not accept the indexing request.",
+    error: true,
+  };
+}
+
+export async function getIndexableJobIds(): Promise<string[]> {
+  const supabase = await requireAdmin();
+  const indexableIds: string[] = [];
+  const pageSize = 1000;
+
+  for (let offset = 0; offset < 50_000; offset += pageSize) {
+    const { data, error } = await supabase
+      .from("jobs")
+      .select("id,status,closing_date,location,province,description")
+      .order("created_at", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(`Could not load vacancies for Google indexing: ${error.message}`);
+    if (!data) throw new Error("Could not load vacancies for Google indexing.");
+
+    indexableIds.push(...data.filter(isJobIndexable).map((job) => job.id));
+    if (data.length < pageSize) return indexableIds;
+  }
+
+  return indexableIds;
+}
+
+export async function requestAllJobIndexing(ids: string[]): Promise<GoogleIndexingBatchState> {
+  await requireAdmin();
+  if (!isGoogleIndexingConfigured()) {
+    return {
+      submitted: 0,
+      failed: 0,
+      message: "Google Indexing is not configured. Add a valid service-account JSON key as GOOGLE_INDEXING_SERVICE_ACCOUNT_JSON in Vercel.",
+    };
+  }
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 10 || ids.some((id) => typeof id !== "string" || !id)) {
+    return { submitted: 0, failed: 0, message: "The indexing batch is invalid. Refresh the page and try again." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: jobs, error } = await supabase
+    .from("jobs")
+    .select("id,slug,status,closing_date,location,province,description")
+    .in("id", ids);
+  if (error) throw new Error(`Could not load vacancies for indexing: ${error.message}`);
+  if (!jobs) throw new Error("Could not load vacancies for indexing.");
+
+  const indexableJobs = jobs.filter(isJobIndexable);
+  if (indexableJobs.length === 0) {
+    return { submitted: 0, failed: 0, message: "No vacancies in this batch are currently eligible for indexing." };
+  }
+
+  return requestGoogleIndexing(indexableJobs.map((job) => job.slug));
+}
 
 async function getTurnstileError(formData: FormData): Promise<FormState | null> {
   const result = await verifyTurnstileToken(formData);
