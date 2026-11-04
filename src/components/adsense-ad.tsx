@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-export function AdSenseAd() {
+export function AdSenseAd({ placement }: { placement: "source" | "application" }) {
   const slotRef = useRef<HTMLModElement>(null);
 
   function initializeAd() {
@@ -36,11 +36,11 @@ export function AdSenseAd() {
         data-full-width-responsive="true"
       />
       <Script
-        id="adsense-script"
+        id={`adsense-script-${placement}`}
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3860151941190347"
         strategy="lazyOnload"
         crossOrigin="anonymous"
-        onReady={initializeAd}
+        onLoad={initializeAd}
         onError={(error) => console.error("Could not load the AdSense script.", error)}
       />
     </aside>

@@ -515,6 +515,7 @@ export default async function JobPage({
               {postReference?.[1] && <span>Post {postReference[1]}{postReference[2] ? `, page ${postReference[2]}` : ""}</span>}
             </p>
           )}
+          {circularUrl && <AdSenseAd placement="source" />}
           {roleFacts.length > 0 && (
             <dl className="vacancy-facts">
               {roleFacts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd><SearchHighlight text={cleanCopy(value)} query={q} /></dd></div>)}
@@ -538,7 +539,7 @@ export default async function JobPage({
             )}
             {(applicationInstructions || emails.length || methods.length || documents.length || enquiries || telephone) && (
               <>
-                <AdSenseAd />
+                <AdSenseAd placement="application" />
                 <CopySectionView title="How to apply">
                   {applicationSummary && <p><SearchHighlight text={sentenceLines(applicationSummary)} query={q} /></p>}
                   {(methods.length > 0 || emails.length > 0 || documents.length > 0 || enquiries || telephone) && (
