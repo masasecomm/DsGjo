@@ -1,0 +1,6 @@
+:HL["/_next/static/media/9dd75fadc5b3df29-s.p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/_next/static/css/f0adab4a8b485b10.css","style"]
+:HL["/_next/static/css/c4da292a54d08887.css","style"]
+2:[["children",{"s":"__PAGE__","h":160}]]
+1:[["children",{"s":"privacy-policy","h":96,"c":"$Q2"}]]
+0:{"b":"sJv3N-lDrgJps9ll5LI9_","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
