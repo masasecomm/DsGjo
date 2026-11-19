@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "DPSA Government Jobs Admin",
+  "version": "1.0.0",
+  "description": "Parse DPSA circulars and manage vacancy content.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://www.dpsagovernmentjobs.co.za/*",
+    "https://*.pages.dev/*"
+  ],
+  "action": {
+    "default_title": "DPSA Jobs Admin",
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

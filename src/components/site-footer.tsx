@@ -1,8 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
-import { Suspense } from "react";
-import { connection } from "next/server";
 import { SubscribeForm } from "@/components/subscribe-form";
 import { SocialLinks } from "@/components/social-links";
 import { getPublishedDepartments, getPublishedProvinces } from "@/lib/jobs";
@@ -13,31 +11,15 @@ const aboutLinks = [
   ["Privacy policy", "/privacy-policy"],
   ["Cookie statement", "/cookie-statement"],
   ["Terms and conditions", "/terms-and-conditions"],
-  ["Admin sign in", "/admin/login"],
 ] as const;
 
-async function DepartmentLinks() {
-  await connection();
-  const departments = await getPublishedDepartments(8);
-  return departments.map((department) => (
-    <Link href={`/jobs?department=${encodeURIComponent(department)}`} key={department}>{department}</Link>
-  ));
-}
+export async function SiteFooter() {
+  const [departments, provinces] = await Promise.all([
+    getPublishedDepartments(8),
+    getPublishedProvinces(),
+  ]);
+  const year = new Date().getFullYear();
 
-async function ProvinceLinks() {
-  await connection();
-  const provinces = await getPublishedProvinces();
-  return provinces.map((province) => (
-    <Link href={`/jobs?province=${encodeURIComponent(province)}`} key={province}>{province}</Link>
-  ));
-}
-
-async function Copyright() {
-  await connection();
-  return <span>© {new Date().getFullYear()} DPSA Government Jobs</span>;
-}
-
-export function SiteFooter() {
   return (
     <footer className="site-footer">
       <section className="site-footer-signup" id="job-alerts" aria-labelledby="footer-signup-title">
@@ -60,16 +42,16 @@ export function SiteFooter() {
 
         <nav className="site-footer-column" aria-label="Vacancies by province">
           <h3>Provinces</h3>
-          <Suspense fallback={<Link href="/jobs">Browse all vacancies</Link>}>
-            <ProvinceLinks />
-          </Suspense>
+          {provinces.map((province) => (
+            <Link href={`/jobs?province=${encodeURIComponent(province)}`} key={province}>{province}</Link>
+          ))}
         </nav>
 
         <nav className="site-footer-column" aria-label="Vacancies by department">
           <h3>Departments</h3>
-          <Suspense fallback={<Link href="/jobs">Browse all vacancies</Link>}>
-            <DepartmentLinks />
-          </Suspense>
+          {departments.map((department) => (
+            <Link href={`/jobs?department=${encodeURIComponent(department)}`} key={department}>{department}</Link>
+          ))}
           <Link href="/jobs">Browse all vacancies</Link>
         </nav>
 
@@ -86,9 +68,7 @@ export function SiteFooter() {
       </div>
 
       <div className="site-footer-bottom">
-        <Suspense fallback={<span>© 2026 DPSA Government Jobs</span>}>
-          <Copyright />
-        </Suspense>
+        <span>© {year} DPSA Government Jobs</span>
         <SocialLinks className="site-footer-socials" />
       </div>
     </footer>

@@ -25,8 +25,8 @@ export function SiteHeader() {
     const controller = new AbortController();
     const loadCurrentCircular = async () => {
       try {
-        const response = await fetch("/api/public/current-circular", {
-          cache: "no-store",
+        const response = await fetch("/current-circular.json", {
+          cache: "force-cache",
           signal: controller.signal,
         });
         if (!response.ok) throw new Error(`Request failed with status ${response.status}`);

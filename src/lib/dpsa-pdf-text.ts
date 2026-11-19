@@ -1,9 +1,9 @@
 const maxPages = 500;
 
-export async function extractDpsaPdfText(data: Uint8Array) {
+export async function extractDpsaPdfText(data: Uint8Array, extensionWorkerSrc?: string) {
   const pdfjs = await import("pdfjs-dist/build/pdf.min.mjs");
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    "../../node_modules/pdfjs-dist/build/pdf.worker.min.mjs",
+    extensionWorkerSrc ?? "../../node_modules/pdfjs-dist/build/pdf.worker.min.mjs",
     import.meta.url,
   ).toString();
 

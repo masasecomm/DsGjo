@@ -1,0 +1,56 @@
+name: Build and save static website
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "generated-site/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: static-site-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate legacy URL redirects
+        run: node scripts/write-redirects.mjs
+
+      - name: Build static site
+        run: npm run build
+        env:
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+
+      - name: Save generated HTML to GitHub
+        shell: bash
+        run: |
+          rm -rf generated-site
+          mkdir -p generated-site
+          cp -R out/. generated-site/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f generated-site
+          if git diff --cached --quiet; then
+            echo "Generated website is unchanged."
+            exit 0
+          fi
+          git commit -m "Build static website"
+          git push

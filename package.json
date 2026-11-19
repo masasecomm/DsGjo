@@ -4,28 +4,35 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "export:public-jobs": "node scripts/export-public-jobs.mjs",
+    "export:supabase-private-data": "node scripts/export-supabase-private-data.mjs",
+    "extension:build": "node scripts/build-extension.mjs",
+    "cf:db:migrate:local": "wrangler d1 migrations apply dpsa-government-jobs --local",
+    "cf:db:migrate:remote": "wrangler d1 migrations apply dpsa-government-jobs --remote",
+    "cf:db:import-private": "wrangler d1 execute dpsa-government-jobs --remote --file=migration-private/cloudflare-data.sql"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^1.64.0",
     "next": "16.4.3",
-    "pdfjs-dist": "^4.10.38",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "esbuild": "^0.25.0",
+    "pdfjs-dist": "^4.10.38",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.0.0"
   }
 }

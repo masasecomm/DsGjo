@@ -16,6 +16,9 @@
 # next.js
 /.next/
 /out/
+/generated-site/
+/extension/dist/
+/migration-private/
 
 # production
 /build

@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
-import { connection } from "next/server";
 import { getPublishedCircularSlugs, getPublishedJobs } from "@/lib/jobs";
 import { getSiteUrl } from "@/lib/site-url";
 
+export const dynamic = "force-static";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  await connection();
   const siteUrl = getSiteUrl();
   const jobs = await getPublishedJobs(50_000);
   const circularSlugs = getPublishedCircularSlugs(jobs);

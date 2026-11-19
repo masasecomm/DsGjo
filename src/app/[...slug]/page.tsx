@@ -3,20 +3,29 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
-import { connection } from "next/server";
 import { ArrowLeft, ArrowUpRight, Banknote, CalendarDays, MapPin, MessageCircle } from "lucide-react";
 import { AdSenseAd } from "@/components/adsense-ad";
-import { CommentForm } from "@/components/comment-form";
-import { JobPagination } from "@/components/job-pagination";
+import { CommentForm, CommentList } from "@/components/comment-form";
 import { SearchHighlight } from "@/components/search-highlight";
 import { VacancyCard } from "@/components/vacancy-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { getApprovedComments, getPublishedCircularJobPage, getPublishedJob, isCircularJob, isJobOpen } from "@/lib/jobs";
+import { getAllPublishedJobs, getPublishedCircularJobs, getPublishedCircularSlugs, getPublishedJob, isCircularJob, isJobOpen } from "@/lib/jobs";
 import { getDpsaCircularSlug, parseDpsaCircularSlug } from "@/lib/job-slugs";
 import type { Job } from "@/lib/jobs";
 
-export const instant = false;
+export const dynamicParams = false;
+const emptySiteRoute = "__empty-site-bootstrap";
+
+export async function generateStaticParams() {
+  const jobs = await getAllPublishedJobs();
+  const jobSlugs = jobs.map((job) => job.slug);
+  const circularSlugs = getPublishedCircularSlugs(jobs);
+  const routes = [...new Set([...jobSlugs, ...circularSlugs])];
+  if (!routes.length) routes.push(emptySiteRoute);
+  return routes
+    .map((slug) => ({ slug: slug.split("/") }));
+}
 
 type CopySection = "about" | "requirements" | "duties" | "skills" | "experience" | "application" | "notes" | "details" | "facts";
 
@@ -178,6 +187,12 @@ export async function generateMetadata({
   params: Promise<{ slug: string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  if (slug.length === 1 && slug[0] === emptySiteRoute) {
+    return {
+      title: "New vacancies are on the way",
+      robots: { index: false, follow: true },
+    };
+  }
   const circular = slug.length === 1 ? parseDpsaCircularSlug(slug[0]) : null;
   if (circular) {
     const title = `DPSA Circular ${circular.number} of ${circular.year} vacancies`;
@@ -228,25 +243,30 @@ export async function generateMetadata({
 
 export default async function JobPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string[] }>;
-  searchParams: Promise<{ page?: string | string[]; q?: string }>;
 }) {
-  await connection();
-  const [{ slug }, { page: pageParam, q = "" }] = await Promise.all([params, searchParams]);
+  const { slug } = await params;
+  const q = "";
+  if (slug.length === 1 && slug[0] === emptySiteRoute) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="detail-wrap">
+          <article className="detail-card">
+            <h1>New vacancies are on the way</h1>
+            <p>There are no published vacancies yet. Please check back soon.</p>
+            <Link href="/jobs" className="back-link">Browse all vacancies</Link>
+          </article>
+        </main>
+        <SiteFooter />
+      </>
+    );
+  }
   const isLegacyJobsPath = slug[0] === "jobs";
   const circular = !isLegacyJobsPath && slug.length === 1 ? parseDpsaCircularSlug(slug[0]) : null;
   if (circular) {
-    const requestedPage = Number(Array.isArray(pageParam) ? pageParam[0] : pageParam);
-    const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
-    let result = await getPublishedCircularJobPage(circular.year, circular.number, page);
-    const pageCount = Math.max(1, Math.ceil(result.total / 10));
-    const currentPage = Math.min(page, pageCount);
-    if (currentPage !== page) {
-      result = await getPublishedCircularJobPage(circular.year, circular.number, currentPage);
-    }
-    const jobs = result.jobs;
+    const jobs = await getPublishedCircularJobs(circular.year, circular.number);
     if (!jobs.length) redirect("/");
 
     return (
@@ -259,17 +279,8 @@ export default async function JobPage({
             <p>Vacancies published in this circular, including closed positions.</p>
           </section>
           <section className="page-content">
-            <p className="admin-subtitle">
-              {result.total} {result.total === 1 ? "opportunity" : "opportunities"}
-              {result.total > 0 ? ` · Page ${currentPage} of ${pageCount}` : ""}
-            </p>
+            <p className="admin-subtitle">{jobs.length} {jobs.length === 1 ? "opportunity" : "opportunities"}</p>
             <div className="list-grid">{jobs.map((job) => <VacancyCard job={job} key={job.id} />)}</div>
-            <JobPagination
-              page={currentPage}
-              totalItems={result.total}
-              pageSize={10}
-              hrefForPage={(pageNumber) => `/${slug[0]}?page=${pageNumber}`}
-            />
           </section>
         </main>
         <SiteFooter />
@@ -287,7 +298,6 @@ export default async function JobPage({
     permanentRedirect(`/${job.slug}`);
   }
 
-  const comments = await getApprovedComments(job.id);
   const isOpen = isJobOpen(job);
   const structuredDetails: Record<string, unknown> | null = typeof job.structured_details === "object"
     && job.structured_details !== null
@@ -564,10 +574,9 @@ export default async function JobPage({
         </article>
         <section className="comments">
           <h2><MessageCircle size={20} /> Discussion</h2>
-          {comments.map((comment) => <article className="comment" key={comment.id}><strong>{comment.author_name}</strong><time>{new Date(comment.created_at).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</time><p>{comment.content}</p></article>)}
-          {!comments.length && <p className="admin-subtitle">No comments yet. Be the first to ask a question.</p>}
+          <CommentList jobSlug={job.slug} />
           <h3 className="section-kicker">LEAVE A COMMENT</h3>
-          <CommentForm jobId={job.id} />
+          <CommentForm jobSlug={job.slug} />
         </section>
       </main>
       <SiteFooter />

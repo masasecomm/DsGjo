@@ -1,0 +1,10 @@
+name = "dpsa-government-jobs"
+pages_build_output_dir = "generated-site"
+compatibility_date = "2026-11-09"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dpsa-government-jobs"
+database_id = "REPLACE_WITH_CLOUDFLARE_D1_DATABASE_ID"
+migrations_dir = "supabase/migrations-cloudflare"
+

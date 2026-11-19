@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export function JobPagination({
   page,
   totalItems,
@@ -32,17 +30,17 @@ export function JobPagination({
         <li className={`page-item${page === 1 ? " disabled" : ""}`}>
           {page === 1
             ? <span className="page-link" aria-disabled="true">Previous</span>
-            : <Link className="page-link" href={hrefForPage(page - 1)} rel="prev">Previous</Link>}
+            : <a className="page-link" href={hrefForPage(page - 1)} rel="prev">Previous</a>}
         </li>
         {visiblePages.map((pageNumber) => typeof pageNumber === "number" ? (
           <li className={`page-item${pageNumber === page ? " active" : ""}`} key={pageNumber}>
-            <Link
+            <a
               aria-current={pageNumber === page ? "page" : undefined}
               className="page-link"
               href={hrefForPage(pageNumber)}
             >
               {pageNumber}
-            </Link>
+            </a>
           </li>
         ) : (
           <li className="page-item disabled" key={pageNumber}>
@@ -52,7 +50,7 @@ export function JobPagination({
         <li className={`page-item${page === pageCount ? " disabled" : ""}`}>
           {page === pageCount
             ? <span className="page-link" aria-disabled="true">Next</span>
-            : <Link className="page-link" href={hrefForPage(page + 1)} rel="next">Next</Link>}
+            : <a className="page-link" href={hrefForPage(page + 1)} rel="next">Next</a>}
         </li>
       </ul>
     </nav>

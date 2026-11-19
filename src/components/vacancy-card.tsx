@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Banknote, Building2, BriefcaseBusiness, CalendarDays, MapPin } from "lucide-react";
-import { getJobProvince, getVacancyFact, isCircularJob, type Job } from "@/lib/jobs";
+import { getJobProvince, getVacancyFact, isCircularJob } from "@/lib/job-utils";
+import type { Job } from "@/lib/job-utils";
 import { SearchHighlight } from "@/components/search-highlight";
 
 type VacancyCardJob = Pick<

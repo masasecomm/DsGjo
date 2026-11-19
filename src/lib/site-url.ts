@@ -4,9 +4,7 @@ export function getSiteUrl() {
   const configuredUrl = process.env.NODE_ENV === "production"
     ? productionSiteUrl
     : process.env.NEXT_PUBLIC_SITE_URL
-      || (process.env.VERCEL_PROJECT_PRODUCTION_URL
-        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-        : productionSiteUrl);
+      || productionSiteUrl;
 
   try {
     return new URL(configuredUrl).origin;
